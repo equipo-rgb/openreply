@@ -75,7 +75,7 @@ export default function SettingsPage() {
   }
 
   async function disconnectInstagram(instagramAccountId: string) {
-    if (!confirm("Disconnect Instagram? Campaigns for this account will stop sending DMs.")) {
+    if (!confirm("¿Desconectar Instagram? Las campañas de esta cuenta dejarán de enviar DMs.")) {
       return;
     }
 
@@ -137,14 +137,14 @@ export default function SettingsPage() {
       </Suspense>
 
       <section className="panel rounded p-4 sm:p-6">
-        <h2 className="text-base font-semibold mb-6">Instagram Connection</h2>
+        <h2 className="text-base font-semibold mb-6">Conexión con Instagram</h2>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Status</p>
+              <p className="text-sm font-medium text-foreground">Estado</p>
               <p className="text-xs text-muted mt-0.5">
-                Comment webhooks and private replies depend on this connection.
+                Los avisos de comentarios y las respuestas privadas dependen de esta conexión.
               </p>
             </div>
             <span
@@ -154,27 +154,26 @@ export default function SettingsPage() {
                   : "bg-warning/10 text-warning"
               }`}
             >
-              {accounts.length > 0 ? "Connected" : "Not connected"}
+              {accounts.length > 0 ? "Conectado" : "Sin conectar"}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
             <div>
-              <p className="text-sm font-medium text-foreground">Accounts</p>
+              <p className="text-sm font-medium text-foreground">Cuentas</p>
               <p className="text-xs text-muted mt-0.5">
-                {accounts.length} connected Instagram profile
-                {accounts.length === 1 ? "" : "s"}
+                {accounts.length} {accounts.length === 1 ? "perfil de Instagram conectado" : "perfiles de Instagram conectados"}
               </p>
             </div>
             <span className="text-sm text-muted">
-              {accounts.length > 0 ? `${accounts.length} connected` : "None"}
+              {accounts.length > 0 ? `${accounts.length} conectadas` : "Ninguna"}
             </span>
           </div>
 
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
               <p className="text-sm text-muted">
-                Connect an Instagram professional account to launch campaigns.
+                Conecta una cuenta profesional de Instagram para activar campañas.
               </p>
             )}
             {accounts.map((account) => (
@@ -187,11 +186,11 @@ export default function SettingsPage() {
                     @{account.username}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    Token expires{" "}
+                    Caducidad del token:{" "}
                     {account.tokenExpiresAt
-                      ? new Date(account.tokenExpiresAt).toLocaleDateString()
-                      : "not available"}{" "}
-                    · {account.webhookSubscribed ? "Webhook ready" : "Webhook pending"}
+                      ? new Date(account.tokenExpiresAt).toLocaleDateString("es-ES")
+                      : "fecha no disponible"}{" "}
+                    · {account.webhookSubscribed ? "Recepción de avisos activa" : "Recepción de avisos pendiente"}
                   </p>
                 </div>
                 <button
@@ -200,8 +199,8 @@ export default function SettingsPage() {
                   className="inline-flex items-center justify-center rounded border border-error/20 px-4 py-2 text-sm font-medium text-error transition-all hover:border-error/40 hover:bg-error/10 disabled:opacity-50"
                 >
                   {busy === `disconnect:${account.id}`
-                    ? "Disconnecting..."
-                    : "Disconnect"}
+                    ? "Desconectando..."
+                    : "Desconectar"}
                 </button>
               </div>
             ))}
@@ -213,7 +212,7 @@ export default function SettingsPage() {
             href="/api/instagram/connect"
             className="px-4 py-2 rounded text-sm font-medium transition-colors bg-accent text-white hover:bg-accent-hover"
           >
-            {accounts.length > 0 ? "Connect another account" : "Connect Instagram"}
+            {accounts.length > 0 ? "Conectar otra cuenta" : "Conectar Instagram"}
           </a>
         </div>
       </section>

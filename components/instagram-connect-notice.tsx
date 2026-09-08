@@ -13,27 +13,27 @@ const TONE_CLASSES: Record<Tone, string> = {
 const MESSAGES: Record<string, { tone: Tone; title: string; detail: string }> = {
   denied: {
     tone: "warning",
-    title: "Instagram connection cancelled",
+    title: "Conexión con Instagram cancelada",
     detail:
-      "You declined the permission prompt on Instagram. Start again and accept all requested permissions.",
+      "Has rechazado los permisos en Instagram. Vuelve a empezar y acepta todos los permisos solicitados.",
   },
   invalid: {
     tone: "error",
-    title: "Instagram connection expired",
+    title: "Conexión con Instagram caducada",
     detail:
-      "The login link was missing or older than 10 minutes. Click Connect Instagram to start a fresh attempt.",
+      "Falta el enlace de acceso o han pasado más de 10 minutos. Pulsa Conectar Instagram para volver a intentarlo.",
   },
   forbidden: {
     tone: "error",
-    title: "Not permitted",
+    title: "Acceso no permitido",
     detail:
-      "Only workspace owners and admins can connect an Instagram account.",
+      "Solo los propietarios y administradores del espacio de trabajo pueden conectar una cuenta de Instagram.",
   },
   already_connected: {
     tone: "warning",
-    title: "Account already connected",
+    title: "Cuenta ya conectada",
     detail:
-      "That Instagram account is connected to another workspace. Disconnect it there first, or connect a different account.",
+      "Esa cuenta de Instagram está conectada a otro espacio de trabajo. Desconéctala allí primero o conecta otra cuenta.",
   },
 };
 
@@ -49,13 +49,13 @@ export function InstagramConnectNotice() {
       .filter(Boolean);
 
     return (
-      <Notice tone="error" title="Instagram app not configured">
+      <Notice tone="error" title="Aplicación de Instagram sin configurar">
         <p>
-          Set{" "}
+          Configura{" "}
           {missing.length > 0
-            ? "these environment variables"
-            : "the required environment variables"}{" "}
-          and restart the server:
+            ? "estas variables de entorno"
+            : "las variables de entorno necesarias"}{" "}
+          y reinicia el servidor:
         </p>
         {missing.length > 0 && (
           <ul className="mt-2 space-y-1">
@@ -67,10 +67,10 @@ export function InstagramConnectNotice() {
           </ul>
         )}
         <p className="mt-2">
-          See <span className="font-mono text-xs">docs/setup.md</span> for how to
-          obtain each value. Note that{" "}
-          <span className="font-mono text-xs">ENCRYPTION_KEY</span> must be a
-          64-character hex string.
+          Consulta <span className="font-mono text-xs">docs/setup.md</span> para saber cómo
+          obtener cada valor. Recuerda que{" "}
+          <span className="font-mono text-xs">ENCRYPTION_KEY</span> debe ser una
+          cadena hexadecimal de 64 caracteres.
         </p>
       </Notice>
     );
@@ -80,11 +80,11 @@ export function InstagramConnectNotice() {
     const reason = searchParams.get("reason");
 
     return (
-      <Notice tone="error" title="Instagram connection failed">
+      <Notice tone="error" title="No se ha podido conectar con Instagram">
         <p>
-          Instagram accepted the login but the connection could not be
-          completed. This is usually a mismatched redirect URI or an app that is
-          missing the required permissions.
+          Instagram ha aceptado el acceso, pero no se ha podido completar
+          la conexión. Suele deberse a una URI de redirección incorrecta o a que
+          faltan permisos en la aplicación.
         </p>
         {reason && (
           <p className="mt-2 font-mono text-xs break-words opacity-80">

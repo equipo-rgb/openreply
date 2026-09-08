@@ -15,7 +15,7 @@ const pageTitles: Record<string, string> = {
   "/automations": "Campañas",
   "/automations/new": "Crear campaña",
   "/logs": "Registro de DMs",
-  "/settings": "Settings",
+  "/settings": "Ajustes",
   "/diagnostics": "Diagnostics",
 };
 
@@ -58,7 +58,7 @@ export default function TopBar({
       {instagramAccountCount > 0 ? (
         <p className="shrink-0 truncate text-sm text-muted">
           {instagramAccountCount > 1
-            ? `${instagramAccountCount} accounts`
+            ? `${instagramAccountCount} cuentas`
             : `@${instagramUsername}`}
         </p>
       ) : (
@@ -67,8 +67,8 @@ export default function TopBar({
           className="shrink-0 whitespace-nowrap text-sm font-medium px-3 py-1.5 rounded bg-accent text-white hover:bg-accent-hover"
         >
           {/* Full label needs more room than a 360px header has to spare. */}
-          <span className="sm:hidden">Connect</span>
-          <span className="hidden sm:inline">Connect Instagram</span>
+          <span className="sm:hidden">Conectar</span>
+          <span className="hidden sm:inline">Conectar Instagram</span>
         </a>
       )}
     </header>
