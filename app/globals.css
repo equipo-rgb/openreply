@@ -4,20 +4,27 @@
    Plain and functional. No gradients, glass, glow, or animation. */
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #18181b;
-  --color-surface: #f7f7f8;
-  --color-surface-hover: #efeff1;
-  --color-border: #e4e4e7;
-  --color-border-hover: #d4d4d8;
-  --color-muted: #71717a;
-  --color-accent: #f97316;
-  --color-accent-hover: #ea580c;
-  --color-success: #16a34a;
-  --color-error: #dc2626;
-  --color-warning: #d97706;
+  --color-background: var(--ui-background, #ffffff);
+  --color-foreground: var(--ui-foreground, #18181b);
+  --color-surface: var(--ui-surface, #f7f7f8);
+  --color-surface-hover: var(--ui-surface-hover, #efeff1);
+  --color-border: var(--ui-border, #e4e4e7);
+  --color-border-hover: var(--ui-border-hover, #d4d4d8);
+  --color-muted: var(--ui-muted, #71717a);
+  --color-accent: var(--ui-accent, #f97316);
+  --color-accent-hover: var(--ui-accent-hover, #ea580c);
+  --color-success: var(--ui-success, #16a34a);
+  --color-error: var(--ui-error, #dc2626);
+  --color-warning: var(--ui-warning, #d97706);
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono, ui-monospace), monospace;
+  --radius-sm: calc(var(--radius, 0.625rem) * 0.5);
+  --radius-md: calc(var(--radius, 0.625rem) * 0.75);
+  --radius-lg: var(--radius, 0.625rem);
+  --radius-xl: calc(var(--radius, 0.625rem) * 1.4);
+  --radius-2xl: calc(var(--radius, 0.625rem) * 1.8);
+  --default-transition-duration: 180ms;
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html {
@@ -87,4 +94,127 @@ select:focus-visible {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Nimbus de dia-jarvis. El tema se limita al acceso y al panel privado. */
+.dia-ui {
+  --ui-background: #101113;
+  --ui-foreground: #f3f4f5;
+  --ui-surface: #17181c;
+  --ui-surface-hover: #23262b;
+  --ui-elevated: #1d1f24;
+  --ui-border: #26282d;
+  --ui-border-hover: #34373d;
+  --ui-muted: #a1a5ab;
+  --ui-faint: #8a8f98;
+  --ui-accent: #22c55e;
+  --ui-accent-hover: #4ade80;
+  --ui-success: #22c55e;
+  --ui-error: #f14a4a;
+  --ui-warning: #f5a524;
+  --radius: 0.625rem;
+  color-scheme: dark;
+  color: var(--ui-foreground);
+  background: var(--ui-background);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11", "cv02";
+  text-rendering: optimizeLegibility;
+}
+
+.dia-ui ::selection {
+  background: rgb(34 197 94 / 30%);
+  color: #fff;
+}
+
+.dia-ui :focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+
+.dia-ui .panel {
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
+}
+
+.dia-ui .ui-glass {
+  background: linear-gradient(180deg, rgb(22 22 26 / 85%), rgb(17 17 19 / 75%));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 6%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 24px 60px -12px rgb(0 0 0 / 50%);
+}
+
+.dia-ui.ui-wallpaper {
+  background-image: radial-gradient(ellipse 70% 45% at 18% 0%, rgb(34 197 94 / 10%), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 82% 100%, rgb(34 197 94 / 6%), transparent 60%);
+}
+
+@layer components {
+  .ui-brand {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, #4ade80, #22c55e 55%, #15803d);
+    color: #101113;
+    font-size: 0.875rem;
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 18%) inset;
+  }
+
+  .ui-field {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid var(--ui-border-hover);
+    border-radius: calc(var(--radius) * 0.75);
+    background: var(--ui-background);
+    padding: 0.625rem 0.875rem;
+    color: var(--ui-foreground);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ui-field::placeholder { color: var(--ui-faint); }
+  .ui-field:focus { border-color: var(--ui-accent); }
+
+  .ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--ui-border-hover);
+    border-radius: var(--radius);
+    background: var(--ui-surface);
+    color: var(--ui-foreground);
+    font-size: 0.875rem;
+    line-height: 1.25;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ui-button:hover { background: var(--ui-surface-hover); border-color: var(--ui-muted); }
+  .ui-button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ui-button-primary { background: var(--ui-accent); border-color: transparent; color: #101113; font-weight: 600; }
+  .ui-button-primary:hover { background: var(--ui-accent-hover); border-color: transparent; }
+  .ui-button-danger { color: var(--ui-error); background: rgb(241 74 74 / 8%); border-color: rgb(241 74 74 / 25%); }
+  .ui-button-danger:hover { background: rgb(241 74 74 / 15%); border-color: var(--ui-error); }
+
+  .ui-label { font-size: 0.8125rem; font-weight: 500; color: var(--ui-muted); }
+  .ui-divider { border-top: 1px solid var(--ui-border); }
+}
+
+.dia-ui ::-webkit-scrollbar { width: 8px; height: 8px; }
+.dia-ui ::-webkit-scrollbar-track { background: transparent; }
+.dia-ui ::-webkit-scrollbar-thumb { background: var(--ui-border-hover); border: 2px solid var(--ui-surface); border-radius: 8px; }
+
+@media (max-width: 640px) {
+  .dia-ui .ui-field { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dia-ui .ui-button, .dia-ui .ui-field { transition: none; }
 }

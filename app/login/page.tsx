@@ -33,10 +33,11 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">
+    <div className="dia-ui ui-wallpaper min-h-dvh flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-[420px]">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span className="ui-brand mb-5" aria-hidden="true">OR</span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             OpenReply
           </h1>
           <p className="text-muted text-sm leading-relaxed mt-2">
@@ -48,10 +49,10 @@ export default async function LoginPage({
 
         <DemoNotice variant="panel" />
 
-        <div className="panel rounded p-8 shadow-black/40">
+        <div className="ui-glass rounded-2xl p-6 sm:p-8">
           {selectedTemplate && !checkEmail && (
-            <div className="mb-5 border border-accent/20 bg-accent/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+            <div className="mb-5 rounded-lg border border-accent/20 bg-accent/10 p-4">
+              <p className="text-xs font-medium text-accent">
                 Plantilla seleccionada
               </p>
               <p className="mt-2 text-sm font-semibold text-foreground">
@@ -73,7 +74,7 @@ export default async function LoginPage({
               <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-foreground"
+                  className="ui-label block"
                 >
                   Correo de trabajo
                 </label>
@@ -84,13 +85,13 @@ export default async function LoginPage({
                   required
                   autoComplete="email"
                   placeholder="tu@empresa.com"
-                  className="w-full px-4 py-3 rounded bg-surface border border-border text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none transition-colors"
+                  className="ui-field"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center gap-2 rounded bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-indigo-500/25 transition-all hover:shadow-indigo-500/30"
+                className="ui-button ui-button-primary w-full"
               >
                 Enviar enlace de acceso
               </button>
