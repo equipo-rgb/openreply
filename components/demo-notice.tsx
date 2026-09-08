@@ -100,24 +100,24 @@ export function DemoNotice({ variant }: { variant: "banner" | "panel" }) {
   return (
     <div className="relative mb-5 rounded border border-warning/30 bg-warning/10 px-4 py-3 pr-10">
       <p className="text-sm leading-6 text-foreground">
-        <span className="font-semibold">{DEMO_HOST} is a demo instance.</span>{" "}
-        Signing in here will not send DMs for your Instagram account. OpenReply
-        is self-hosted, so it only works on a deployment you run yourself, with
-        your own Meta app and your own domain.{" "}
+        <span className="font-semibold">{DEMO_HOST} es una instancia de demostración.</span>{" "}
+        Entrar aquí no enviará DMs desde tu cuenta de Instagram. OpenReply
+        se aloja en tu propio servidor y necesita tu propia aplicación de Meta
+        y tu propio dominio.{" "}
         <a
           href={SETUP_DOCS_URL}
           target="_blank"
           rel="noreferrer"
           className="font-semibold text-warning underline underline-offset-2"
         >
-          Read the setup guide
+          Leer la guía de configuración
         </a>
         .
       </p>
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Dismiss demo notice"
+        aria-label="Cerrar aviso de demostración"
         className="absolute right-1 top-1 p-2 text-muted transition hover:text-foreground"
       >
         <DismissIcon />
