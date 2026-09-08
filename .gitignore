@@ -43,3 +43,6 @@ next-env.d.ts
 
 /app/generated/prisma
 .gstack/
+
+# Secretos locales del stack de D-IA (nunca al repo)
+deploy/*.env

@@ -1,0 +1,102 @@
+# Stack OpenReply para easypanel (VPS Hetzner D-IA).
+# Servicio "Compose" en easypanel apuntando a este fichero desde el repo
+# equipo-rgb/openreply, rama dia. El dominio dm.d-ia.es se asigna en la UI
+# de easypanel al servicio web, puerto 3000.
+# Las variables sin valor se rellenan en la pestaña Environment de easypanel.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openreply
+      POSTGRES_USER: openreply
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - openreply_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openreply -d openreply"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - openreply_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: openreply-dia:latest
+    restart: unless-stopped
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+    env_file:
+      - openreply.env
+    environment:
+      DATABASE_URL: postgresql://openreply:${POSTGRES_PASSWORD}@postgres:5432/openreply
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  worker:
+    image: openreply-dia:latest
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
+    env_file:
+      - openreply.env
+    environment:
+      DATABASE_URL: postgresql://openreply:${POSTGRES_PASSWORD}@postgres:5432/openreply
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      # service_started, no service_healthy: /api/health solo da 200 cuando el
+      # worker late, asi que esperar a "healthy" bloquearia al propio worker.
+      web:
+        condition: service_started
+
+  cron:
+    image: openreply-dia:latest
+    restart: unless-stopped
+    command: ["sh", "scripts/cron.sh"]
+    environment:
+      CRON_BASE_URL: http://web:3000
+      CRON_SECRET: ${CRON_SECRET}
+    depends_on:
+      # service_started, no service_healthy: /api/health solo da 200 cuando el
+      # worker late, asi que esperar a "healthy" bloquearia al propio worker.
+      web:
+        condition: service_started
+
+  higiene:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    command: ["sh", "/higiene/higiene.sh"]
+    environment:
+      DATABASE_URL: postgresql://openreply:${POSTGRES_PASSWORD}@postgres:5432/openreply
+    volumes:
+      - ../scripts/higiene.sh:/higiene/higiene.sh:ro
+      - ../scripts/higiene.sql:/higiene/higiene.sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  openreply_pgdata:
+  openreply_redis:
