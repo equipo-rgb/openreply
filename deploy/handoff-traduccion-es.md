@@ -1,12 +1,29 @@
-# Handoff: traducir la interfaz de OpenReply al castellano
+# Handoff: castellano y limpieza visual de la interfaz de OpenReply
 
-Encargo cerrado para un agente que trabaje dentro del repo (Codex CLI o
-equivalente). No requiere conocer el resto del proyecto.
+El encargo tiene dos partes que NO se hacen igual:
+
+- **Parte A, la direccion visual.** La define quien tenga el contexto de marca:
+  tokens de color, tipografia, escala de espaciado y radios, y dos pantallas
+  hechas como referencia. No se delega a ciegas. Un agente sin referencia
+  produce el aspecto generico de siempre.
+- **Parte B, la propagacion.** Traducir al castellano y aplicar a las demas
+  pantallas los patrones que la Parte A ya dejo resueltos. Esto si es mecanico,
+  verificable y se delega bien a un agente que trabaje dentro del repo.
+
+Este documento es el encargo de la **Parte B**. La Parte A tiene que estar hecha
+antes: sin los tokens y sin las dos pantallas de referencia, esto no se empieza.
 
 ## Objetivo
 
-Pasar a castellano de España todo el texto que ve un usuario en la interfaz.
-Nada más. No es un rediseño ni una refactorización.
+Que el panel se entienda sin explicaciones y en castellano, para dos personas que
+lo van a usar a diario. No es una refactorizacion ni un cambio de arquitectura.
+
+## Referencia visual
+
+El estandar es `dia-jarvis` (mismo equipo, mismo Tailwind 4): tokens de color en
+CSS, Geist Sans y Geist Mono, escala de radios derivada de un `--radius` unico,
+transiciones de 180ms con `cubic-bezier(0.16, 1, 0.3, 1)`. La Parte A porta esa
+capa a este repo; la Parte B solo la usa.
 
 ## Contexto del repo
 
@@ -19,7 +36,9 @@ Nada más. No es un rediseño ni una refactorización.
 
 ## Alcance y orden
 
-Traducir en este orden, un commit por pantalla:
+Pantalla por pantalla, en este orden, un commit por pantalla. En cada una: primero
+el texto al castellano, despues aplicar los patrones de la Parte A (tipografia,
+espaciado, estados de foco y error, jerarquia de botones).
 
 1. `app/login` y la pantalla de error de acceso.
 2. La lista de campañas.
@@ -88,15 +107,18 @@ falla por los tipos generados de Prisma, que no están en el repo.
 
 ## Entrega
 
-- Rama `dia-i18n` partiendo de `dia`.
-- Un commit por pantalla, mensaje en castellano, con el prefijo `i18n(es):`.
+- Rama `dia-ui` partiendo de `dia`.
+- Un commit por pantalla, mensaje en castellano, con el prefijo `ui(es):`.
 - En el PR, la lista de pantallas traducidas y las cadenas que se han dejado en
   inglés a propósito, con el motivo.
 
 ## Lo que NO hay que hacer
 
-- No rediseñar, no cambiar espaciados, colores ni estructura de componentes.
-- No reordenar ni extraer componentes.
+- No inventar direccion visual: aplicar la de la Parte A, sin anadir estilos
+  propios, sombras, degradados ni animaciones que no esten en las pantallas de
+  referencia.
+- No reordenar ni extraer componentes salvo que la Parte A lo haya hecho ya en su
+  pantalla equivalente.
 - No añadir `next-intl` ni ninguna librería de i18n.
 - No tocar `lib/`, `worker/`, `prisma/` ni `scripts/`.
 - No actualizar dependencias.
