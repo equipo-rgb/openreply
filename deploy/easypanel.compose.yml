@@ -1,8 +1,14 @@
-# Stack OpenReply para easypanel (VPS Hetzner D-IA).
-# Servicio "Compose" en easypanel apuntando a este fichero desde el repo
-# equipo-rgb/openreply, rama dia. El dominio dm.d-ia.es se asigna en la UI
-# de easypanel al servicio web, puerto 3000.
-# Las variables sin valor se rellenan en la pestaña Environment de easypanel.
+# Stack OpenReply para PRUEBAS EN LOCAL (Docker Desktop).
+#
+# El VPS NO usa este fichero: easypanel corre sobre Docker Swarm, donde
+# build: no se ejecuta y depends_on se ignora. Alli el stack son seis
+# servicios de easypanel tirando de ghcr.io/equipo-rgb/openreply:dia
+# (ver deploy/README-dia.md). Este compose reproduce ese stack en local,
+# construyendo la imagen desde el Dockerfile del repo.
+#
+# Arranque:
+#   POSTGRES_PASSWORD=prueba CRON_SECRET=prueba \
+#     docker compose -f deploy/easypanel.compose.yml up -d --build
 
 services:
   postgres:

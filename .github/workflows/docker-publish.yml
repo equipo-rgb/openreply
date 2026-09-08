@@ -1,39 +1,32 @@
-name: Build & Publish (Docker Hub)
+name: Build & publish Docker image
 
-# Builda a imagem Docker (Dockerfile na raiz) e publica no Docker Hub.
+# Construye la imagen de OpenReply (fork de D-IA) y la sube a ghcr.io.
+# El VPS (easypanel, Docker Swarm) no construye: solo hace pull de esta
+# imagen, igual que dia-jarvis.
 #
-# Secrets necessários no repositório (Settings → Secrets and variables → Actions):
-#   * DOCKERHUB_USERNAME  — usuário do Docker Hub (também vira o namespace)
-#   * DOCKERHUB_TOKEN     — Access Token do Docker Hub (Account Settings → Security)
-#
-# Triggers:
-#   * push na branch main  -> publica :latest e :sha-xxxx
-#   * push de tag vX.Y.Z   -> publica :vX.Y.Z e :latest
-#   * disparo manual (workflow_dispatch)
+#   1. Push a la rama dia
+#   2. Esta action construye y pushea ghcr.io/equipo-rgb/openreply:dia
+#   3. En easypanel, Deploy en los servicios web, worker y cron
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [dia]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  REGISTRY: docker.io
-  IMAGE_NAME: openreply
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
-    name: Build & push
-    # Opt-in. Without this the job runs on every push to main and fails at the
-    # Docker Hub login for anyone who has not set the two secrets — a red X on
-    # main forever, which buries real CI failures. Secrets cannot be read from
-    # a job-level `if`, so the switch is a repo variable: set DOCKERHUB_ENABLED
-    # to "true" under Settings -> Secrets and variables -> Actions -> Variables
-    # once DOCKERHUB_USERNAME and DOCKERHUB_TOKEN exist.
-    if: ${{ vars.DOCKERHUB_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,34 +34,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Log in to ghcr.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.actor }}
+          # GHCR_TOKEN (PAT con write:packages) si esta definido; si no,
+          # el GITHUB_TOKEN del propio run.
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
+      - name: Compute metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            latest=true
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
-          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max

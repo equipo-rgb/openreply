@@ -15,6 +15,36 @@ Convenciones de campañas:
 
 Para actualizar desde upstream: auditar el nuevo commit con /audita-herramienta antes de hacer merge.
 
+## Como se despliega en el VPS
+
+El VPS (Hetzner, `dia-chatwoot-01`) corre easypanel sobre Docker Swarm. En Swarm
+no se ejecuta `build:` y se ignora `depends_on`, asi que el stack NO se despliega
+con el compose de `deploy/`. Ese fichero es solo para probar en local.
+
+En produccion:
+
+1. GitHub Actions (`.github/workflows/docker-publish.yml`) construye la imagen en
+   cada push a la rama `dia` y la sube a `ghcr.io/equipo-rgb/openreply:dia`.
+2. En easypanel, proyecto `openreply`, seis servicios:
+
+   | Servicio | Origen | Comando | Notas |
+   |---|---|---|---|
+   | `postgres` | plantilla Postgres 16 de easypanel | - | base `openreply` |
+   | `redis` | plantilla Redis 7 de easypanel | - | |
+   | `web` | `ghcr.io/equipo-rgb/openreply:dia` | `sh -c "npx prisma migrate deploy && npm run start"` | dominio `dm.d-ia.es`, puerto 3000 |
+   | `worker` | misma imagen | `npm run worker` | |
+   | `cron` | misma imagen | `sh scripts/cron.sh` | `CRON_BASE_URL=http://web:3000` |
+   | `higiene` | `postgres:16-alpine` | `sh /higiene/higiene.sh` | monta `scripts/higiene.sh` y `.sql` |
+
+3. Traefik y el certificado de Let's Encrypt los gestiona easypanel al asignar el
+   dominio. Traefik enruta por fichero generado (`/etc/easypanel/traefik/config/main.yaml`),
+   no por labels de Docker: no vale montar el stack a mano con `docker compose`.
+4. `ENCRYPTION_KEY`, `DATABASE_URL` y `REDIS_URL` tienen que ser identicos en
+   `web`, `worker` y `cron`.
+
+Para desplegar una version nueva: push a `dia`, esperar a la action y pulsar
+Deploy en `web`, `worker` y `cron`.
+
 ## Notas de despliegue verificadas en local (2026-09-08)
 
 - `worker` y `cron` dependen de `web` con `condition: service_started`, no
