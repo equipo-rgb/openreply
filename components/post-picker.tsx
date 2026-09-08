@@ -112,7 +112,7 @@ export default function PostPicker({
     return (
       <div className="text-center py-8">
         <p className="text-sm text-muted">{error}</p>
-        <p className="text-xs text-zinc-500 mt-1">Conecta primero tu cuenta de Instagram</p>
+        <p className="text-xs text-muted mt-1">Conecta primero tu cuenta de Instagram</p>
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function PostPicker({
             setShown(PAGE_SIZE);
           }}
           placeholder="Buscar publicaciones por su texto…"
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+          className="ui-field"
         />
         <span className="shrink-0 text-xs text-muted">{posts.length}</span>
       </div>
@@ -164,9 +164,9 @@ export default function PostPicker({
             </p>
           )}
           {/* auto-rows-min + content-start keep each row at its natural height.
-              Without them the rows share out max-h-64 instead of scrolling, and
+              Without them the rows share out max-h-80 instead of scrolling, and
               the square thumbnails flatten into strips. */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 auto-rows-min content-start overflow-y-auto p-1">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 auto-rows-min content-start overflow-y-auto p-1">
             {visible.map((post) => {
               const isSelected = selectedPostId === post.id;
               const usedByName = usedPostIds?.[post.id];
@@ -185,6 +185,7 @@ export default function PostPicker({
               setHoveredId((cur) => (cur === post.id ? null : cur))
             }
             aria-pressed={isSelected}
+            aria-label={`${post.caption?.slice(0, 80) || "Publicación de Instagram"}${isUsed ? ", ya usada" : ""}`}
             title={isUsed ? `Ya usada por "${usedByName}"` : undefined}
             className={`
               relative aspect-square rounded overflow-hidden border-2
@@ -225,7 +226,7 @@ export default function PostPicker({
               />
             )}
             {isSelected && (
-              <span className="absolute bottom-0 inset-x-0 bg-accent text-white text-xs py-1">
+              <span className="absolute bottom-0 inset-x-0 bg-accent text-background text-xs py-1">
                 Seleccionada
               </span>
             )}
@@ -237,7 +238,7 @@ export default function PostPicker({
             <button
               type="button"
               onClick={() => setShown((n) => n + PAGE_SIZE)}
-              className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+              className="ui-button w-full"
             >
               Mostrar {Math.min(PAGE_SIZE, remaining)} más
             </button>

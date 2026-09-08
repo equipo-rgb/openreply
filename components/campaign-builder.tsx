@@ -69,8 +69,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+    <div className="panel rounded-xl p-5 sm:p-6 space-y-4">
+      <h2 className="text-base font-medium tracking-tight text-foreground">{title}</h2>
       {children}
     </div>
   );
@@ -89,13 +89,14 @@ function Radio({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
-        checked ? "border-accent bg-accent/5" : "border-border hover:border-border-hover"
+      aria-pressed={checked}
+      className={`flex min-h-12 w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+        checked ? "border-accent/50 bg-accent/10" : "border-border bg-background hover:border-border-hover"
       }`}
     >
       <span
         className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-          checked ? "border-accent" : "border-zinc-500"
+          checked ? "border-accent" : "border-muted"
         }`}
       >
         {checked && <span className="h-2 w-2 rounded-full bg-accent" />}
@@ -108,16 +109,21 @@ function Radio({
 function Toggle({
   on,
   onToggle,
+  label,
 }: {
   on: boolean;
   onToggle: () => void;
+  label: string;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
       className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        on ? "bg-accent" : "bg-zinc-300"
+        on ? "bg-accent" : "bg-surface-hover"
       }`}
     >
       <span
@@ -533,16 +539,16 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   }
 
   if (loading) {
-    return <div className="panel h-64 rounded" />;
+    return <div className="panel h-64 rounded-xl" />;
   }
 
   if (notFound) {
     return (
-      <div className="panel rounded p-8 text-center">
+      <div className="panel rounded-xl p-8 text-center">
         <p className="text-sm text-muted">No se ha encontrado la campaña.</p>
         <button
           onClick={() => router.push("/campaigns")}
-          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+          className="ui-button mt-4"
         >
           Volver a las campañas
         </button>
@@ -553,7 +559,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   return (
     <div className="space-y-6">
       {importQueue && (
-        <div className="rounded border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+        <div className="rounded-lg border border-accent/30 bg-accent/5 px-5 py-4 text-sm">
           <span className="font-medium text-foreground">
             Importando {importTotal - importQueue.length + 1} de {importTotal}.
           </span>{" "}
@@ -590,7 +596,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               type="button"
               onClick={skipRow}
               disabled={saving}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+              className="ui-button"
             >
               {importQueue.length > 1 ? "Omitir" : "Omitir y terminar"}
             </button>
@@ -601,7 +607,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 type="button"
                 onClick={() => handleSubmit(false)}
                 disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+                className="ui-button"
               >
                 Detener
               </button>
@@ -610,7 +616,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+                className="ui-button"
               >
                 Activar
               </button>
@@ -619,7 +625,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             type="button"
             onClick={() => handleSubmit(mode === "new" ? true : isActive)}
             disabled={saving}
-            className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            className="ui-button ui-button-primary"
           >
             {saving ? "Guardando…" : mode === "new" ? "Activar" : "Guardar cambios"}
           </button>
@@ -628,25 +634,26 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
       {/* min-w-0 on the cells: a grid item defaults to min-width:auto, so a
           long string widens the whole page instead of wrapping. */}
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr] lg:gap-8">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,560px)_minmax(320px,1fr)]">
       {/* Left: controls */}
-      <div className="space-y-8 min-w-0">
+      <div className="space-y-5 min-w-0">
         {error && (
-          <div className="rounded border border-error/20 bg-error/10 p-3 text-sm text-error">
+          <div role="alert" className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">
             {error}
           </div>
         )}
 
-        <div className="space-y-3">
-          <label className="text-sm font-semibold text-foreground">
+        <div className="panel rounded-xl p-5 sm:p-6 space-y-3">
+          <label htmlFor="campaign-name" className="text-sm font-medium text-foreground">
             Nombre de la campaña{" "}
             <span className="font-normal text-muted">(opcional)</span>
           </label>
           <input
+            id="campaign-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="p. ej., recomendación de YC"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+            className="ui-field"
             maxLength={100}
           />
           {accounts.length > 1 && (
@@ -675,7 +682,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             una publicación o reel concreto
           </Radio>
           {triggerScope === "specific" && (
-            <div className="rounded-lg border border-border p-2">
+            <div className="rounded-lg border border-border bg-background p-3">
               <PostPicker
                 selectedPostId={postId}
                 instagramAccountId={selectedAccountId}
@@ -708,10 +715,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           {matchMode === "specific" && (
             <div className="space-y-1">
               <input
+                aria-label="Palabras clave"
                 value={keywordText}
                 onChange={(e) => setKeywordText(e.target.value)}
                 placeholder="Escribe una o varias palabras"
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                className="ui-field"
               />
               <p className="text-xs text-muted">Separa las palabras con comas</p>
             </div>
@@ -722,13 +730,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           >
             cualquier palabra
           </Radio>
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-4 py-3">
             <span className="text-sm text-foreground">
               Responder también a los DMs que contengan{" "}
               {matchMode === "any" ? "cualquier texto" : "estas palabras"}
             </span>
             <Toggle
               on={dmTriggerEnabled}
+              label="Responder a los DMs"
               onToggle={() => setDmTriggerEnabled(!dmTriggerEnabled)}
             />
           </div>
@@ -739,12 +748,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 : "Los DMs que contengan alguna de estas palabras recibirán la misma respuesta, sin necesidad de comentar."}
             </p>
           )}
-          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3">
             <span className="text-sm text-foreground">
               Responder a los comentarios de la publicación
             </span>
             <Toggle
               on={publicReplyEnabled}
+              label="Responder a los comentarios"
               onToggle={() => setPublicReplyEnabled(!publicReplyEnabled)}
             />
           </div>
@@ -753,6 +763,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               {publicReplyMessages.map((msg, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input
+                    aria-label="Respuesta pública"
                     value={msg}
                     onChange={(e) =>
                       setPublicReplyMessages((prev) =>
@@ -761,7 +772,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                     }
                     placeholder="¡Te he enviado un DM!"
                     maxLength={1000}
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                    className="ui-field"
                   />
                   {publicReplyMessages.length > 1 && (
                     <button
@@ -799,59 +810,65 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         </Section>
 
         <Section title="Recibirá">
-          <div className="rounded-lg border border-border p-3">
+          <div className="rounded-lg border border-border bg-background p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">un DM inicial</span>
               <Toggle
                 on={openingDmEnabled}
+                label="Enviar un DM inicial"
                 onToggle={() => setOpeningDmEnabled(!openingDmEnabled)}
               />
             </div>
             {openingDmEnabled && (
               <div className="mt-3 space-y-2">
                 <textarea
+                  aria-label="Mensaje del DM inicial"
                   value={openingDmMessage}
                   onChange={(e) => setOpeningDmMessage(e.target.value)}
                   placeholder="¡Hola! Me alegra que estés aquí."
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="ui-field resize-none"
                   maxLength={1000}
                 />
                 <input
+                  aria-label="Texto del botón del DM inicial"
                   value={openingDmButtonLabel}
                   onChange={(e) => setOpeningDmButtonLabel(e.target.value)}
                   placeholder="Recibir el enlace"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="ui-field"
                   maxLength={64}
                 />
               </div>
             )}
           </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
+          <div className="mt-3 rounded-lg border border-border bg-background p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">
                 el requisito de seguir la cuenta primero
               </span>
               <Toggle
                 on={requireFollow}
+                label="Pedir que siga la cuenta"
                 onToggle={() => setRequireFollow(!requireFollow)}
               />
             </div>
             {requireFollow && (
               <div className="mt-3 space-y-2">
                 <textarea
+                  aria-label="Mensaje para pedir que siga la cuenta"
                   value={followPromptMessage}
                   onChange={(e) => setFollowPromptMessage(e.target.value)}
                   placeholder="Un favor antes de enviarte el enlace. Esto es gratis y no gano dinero con ello. Si quieres apoyarme, sigue la cuenta y dale una estrella al repositorio en GitHub si te resulta útil. Pulsa el botón cuando sigas la cuenta y te enviaré el enlace."
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="ui-field resize-none"
                   maxLength={1000}
                 />
                 <input
+                  aria-label="Texto del botón de seguimiento"
                   value={followPromptButtonLabel}
                   onChange={(e) => setFollowPromptButtonLabel(e.target.value)}
                   placeholder="Confirmar que sigo"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="ui-field"
                   maxLength={20}
                 />
                 <p className="text-xs text-muted">
@@ -865,53 +882,58 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         </Section>
 
         <Section title="Y después recibirá">
-          <div className="rounded-lg border border-border p-3 space-y-2">
+          <div className="rounded-lg border border-border bg-background p-4 space-y-2">
             <span className="text-sm text-foreground">un DM con un enlace</span>
             <textarea
+              aria-label="Mensaje del DM con enlace"
               value={dmMessage}
               onChange={(e) => setDmMessage(e.target.value)}
               placeholder="Escribe un mensaje"
               rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+              className="ui-field resize-none"
               maxLength={1000}
             />
             {linkOpen ? (
               <div className="space-y-2">
                 <input
+                  aria-label="URL del enlace"
                   value={trackedDestinationUrl}
                   onChange={(e) => setTrackedDestinationUrl(e.target.value)}
                   onBlur={ensureLinkToken}
                   placeholder="https://yourlink.com/offer"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="ui-field"
                 />
                 <input
+                  aria-label="Texto del botón del enlace"
                   value={linkButtonLabel}
                   onChange={(e) => setLinkButtonLabel(e.target.value)}
                   placeholder="Texto del botón (p. ej., Abrir enlace)"
                   maxLength={20}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="ui-field"
                 />
                 {secondLinkOpen ? (
                   <div className="space-y-2 border-t border-border pt-2">
                     <input
+                      aria-label="URL del segundo enlace"
                       value={secondaryDestinationUrl}
                       onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
                       placeholder="https://yourlink.com/second"
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      className="ui-field"
                     />
                     <input
+                      aria-label="Texto del segundo botón"
                       value={secondaryButtonLabel}
                       onChange={(e) => setSecondaryButtonLabel(e.target.value)}
                       placeholder="Texto del segundo botón"
                       maxLength={20}
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      className="ui-field"
                     />
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setSecondLinkOpen(true)}
-                    className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                    className="ui-button w-full"
                   >
                     + Añadir un segundo enlace
                   </button>
@@ -921,7 +943,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               <button
                 type="button"
                 onClick={() => setLinkOpen(true)}
-                className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                className="ui-button w-full"
               >
                 + Añadir un enlace
               </button>
@@ -930,24 +952,26 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               {"{link}"} inserta el enlace con seguimiento; {"{username}"} personaliza el mensaje.
             </p>
           </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
+          <div className="mt-3 rounded-lg border border-border bg-background p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">
                 un mensaje de agradecimiento posterior
               </span>
               <Toggle
                 on={followUpEnabled}
+                label="Enviar agradecimiento"
                 onToggle={() => setFollowUpEnabled(!followUpEnabled)}
               />
             </div>
             {followUpEnabled && (
               <div className="mt-3 space-y-2">
                 <textarea
+                  aria-label="Mensaje de agradecimiento"
                   value={followUpMessage}
                   onChange={(e) => setFollowUpMessage(e.target.value)}
                   placeholder="Gracias por seguirme. Te agradezco el apoyo."
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="ui-field resize-none"
                   maxLength={1000}
                 />
                 <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
@@ -956,13 +980,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                     type="number"
                     min={0}
                     max={1440}
+                    aria-label="Minutos de espera"
                     value={followUpDelayMinutes}
                     onChange={(e) =>
                       setFollowUpDelayMinutes(
                         Math.max(0, Math.min(1440, Math.floor(Number(e.target.value) || 0)))
                       )
                     }
-                    className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground focus:border-accent/40 focus:outline-none"
+                    className="ui-field w-20"
                   />
                   <span className="text-xs text-muted">
                     minutos después del enlace
@@ -982,9 +1007,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       </div>
 
       {/* Right: preview */}
-      <div>
-        <p className="mb-4 text-sm text-muted">Vista previa</p>
-        <div className="flex min-w-0 justify-center lg:sticky lg:top-6 lg:block">
+      <div className="lg:sticky lg:top-0">
+        <p className="mb-5 text-center text-sm font-medium text-muted">Vista previa</p>
+        <div className="flex min-w-0 justify-center">
           <CampaignPreview
             tab={previewTab}
             onTabChange={setPreviewTab}
