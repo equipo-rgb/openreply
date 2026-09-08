@@ -21,12 +21,14 @@ const navItems = [
 
 interface SidebarProps {
   isOpen: boolean;
+  panelRef: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   workspaceName: string;
 }
 
 export default function Sidebar({
   isOpen,
+  panelRef,
   onClose,
   workspaceName,
 }: SidebarProps) {
@@ -43,10 +45,14 @@ export default function Sidebar({
       )}
 
       <aside
+        ref={panelRef}
+        id="sidebar-navigation"
+        role={isOpen ? "dialog" : undefined}
+        aria-modal={isOpen || undefined}
+        aria-label="Navegación principal"
         onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}
         className={`
           ui-glass fixed inset-y-3 left-3 z-50 w-[244px] max-w-[85vw] shrink-0 rounded-2xl flex flex-col
-          transition-transform duration-200 ease-out
           lg:h-full lg:translate-x-0 lg:static lg:z-auto
           ${isOpen ? "translate-x-0 visible" : "-translate-x-[calc(100%+1rem)] invisible lg:visible"}
         `}
@@ -65,7 +71,7 @@ export default function Sidebar({
 
         <button type="button" onClick={onClose} className="ui-button mx-3 mt-3 lg:hidden" aria-label="Cerrar menú lateral">Cerrar menú</button>
 
-        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+        <nav aria-label="Secciones" className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");

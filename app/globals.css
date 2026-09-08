@@ -218,3 +218,43 @@ select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .dia-ui .ui-button, .dia-ui .ui-field { transition: none; }
 }
+
+/* Detalles de interacción compartidos. */
+.dia-ui { --ui-control-border: #777c85; }
+.dia-ui .ui-field { border-color: var(--ui-control-border); caret-color: var(--ui-accent); }
+.dia-ui button:disabled { cursor: not-allowed; }
+.dia-ui .ui-button:disabled:hover { border-color: var(--ui-border-hover); background: var(--ui-surface); }
+.dia-ui .ui-button-primary:disabled:hover { background: var(--ui-accent); border-color: transparent; }
+.dia-ui .ui-button-danger:disabled:hover { background: rgb(241 74 74 / 8%); border-color: rgb(241 74 74 / 25%); }
+.dia-ui :is(button, input, textarea, select, a) { scroll-margin-block: 1rem; }
+.dia-ui .ui-switch {
+  height: 2.75rem;
+  background-clip: content-box;
+  border-block: 10px solid transparent;
+}
+.dia-ui .ui-switch > span { top: 4px; }
+.dia-ui .ui-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 1rem;
+  left: 1rem;
+  transform: translateY(-200%);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  background: var(--ui-accent);
+  color: var(--ui-background);
+}
+.dia-ui .ui-skip-link:focus { transform: none; }
+.dia-ui .ui-tabular { font-variant-numeric: tabular-nums; }
+.dia-ui .ui-field-label { display: block; margin-block: 0.75rem 0.375rem; font-size: 0.8125rem; color: var(--ui-muted); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .dia-ui .ui-button:not(:focus-visible):not(:disabled):active { transform: scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dia-ui *, .dia-ui *::before, .dia-ui *::after { scroll-behavior: auto !important; }
+}
+
+.dia-ui .ui-field:focus { border-color: var(--ui-accent); }
+
+/* Keep focus transfer synchronous with drawer visibility, including reduced motion. */
+.dia-ui #sidebar-navigation { transition: none !important; }

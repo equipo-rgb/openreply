@@ -21,12 +21,16 @@ const pageTitles: Record<string, string> = {
 
 interface TopBarProps {
   onMenuClick: () => void;
+  menuOpen: boolean;
+  menuButtonRef: React.RefObject<HTMLButtonElement | null>;
   instagramUsername: string | null;
   instagramAccountCount: number;
 }
 
 export default function TopBar({
   onMenuClick,
+  menuOpen,
+  menuButtonRef,
   instagramUsername,
   instagramAccountCount,
 }: TopBarProps) {
@@ -46,6 +50,9 @@ export default function TopBar({
     >
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <button
+          ref={menuButtonRef}
+          aria-expanded={menuOpen}
+          aria-controls="sidebar-navigation"
           onClick={onMenuClick}
           className="ui-button lg:hidden shrink-0 px-3"
           aria-label="Abrir o cerrar menú lateral"
