@@ -10,9 +10,9 @@ import { usePathname } from "next/navigation";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/campaigns": "Campaigns",
+  "/campaigns": "Campañas",
   "/campaigns/new": "New Campaign",
-  "/automations": "Campaigns",
+  "/automations": "Campañas",
   "/automations/new": "New Campaign",
   "/logs": "DM Logs",
   "/settings": "Settings",
@@ -48,9 +48,9 @@ export default function TopBar({
         <button
           onClick={onMenuClick}
           className="lg:hidden shrink-0 px-2.5 py-1.5 rounded border border-border text-sm text-muted hover:text-foreground"
-          aria-label="Toggle sidebar"
+          aria-label="Abrir o cerrar menú lateral"
         >
-          Menu
+          Menú
         </button>
         <h1 className="truncate text-base font-semibold sm:text-lg">{title}</h1>
       </div>
