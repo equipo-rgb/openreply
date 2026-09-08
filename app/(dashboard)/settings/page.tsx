@@ -51,6 +51,7 @@ export default function SettingsPage() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
@@ -65,6 +66,7 @@ export default function SettingsPage() {
         if (statsPayload.success) setData(statsPayload.data);
         if (membersPayload.success) setMembersData(membersPayload.data);
       })
+      .catch(() => setConnectionError("No se han podido cargar los datos de conexión. Recarga la página para volver a intentarlo."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -79,13 +81,23 @@ export default function SettingsPage() {
       return;
     }
 
+    if (busy) return;
     setBusy(`disconnect:${instagramAccountId}`);
-    await fetch("/api/instagram/disconnect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ instagramAccountId }),
-    });
-    window.location.reload();
+    setConnectionError(null);
+    try {
+      const res = await fetch("/api/instagram/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instagramAccountId }),
+      });
+      const payload = await res.json();
+      if (!res.ok || !payload.success) throw new Error("Disconnect failed");
+      window.location.reload();
+    } catch {
+      setConnectionError("No se ha podido desconectar la cuenta. Vuelve a intentarlo.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function inviteMember(event: React.FormEvent) {
@@ -138,6 +150,7 @@ export default function SettingsPage() {
 
       <section className="panel rounded-xl p-5 sm:p-7">
         <h2 className="text-base font-medium tracking-tight mb-6">Conexión con Instagram</h2>
+        {connectionError && <p role="alert" className="mb-4 rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">{connectionError}</p>}
 
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-border">
@@ -195,7 +208,7 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={() => disconnectInstagram(account.id)}
-                  disabled={busy === `disconnect:${account.id}`}
+                  disabled={busy !== null}
                   className="ui-button ui-button-danger"
                 >
                   {busy === `disconnect:${account.id}`
