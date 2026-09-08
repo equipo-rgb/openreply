@@ -43,12 +43,14 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<DmLog[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [page, setPage] = useState(1);
 
   const fetchLogs = useCallback(async () => {
+    setError(null);
     try {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (statusFilter !== "ALL") params.set("status", statusFilter);
@@ -58,12 +60,14 @@ export default function LogsPage() {
 
       const res = await fetch(`/api/logs?${params}`);
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error("Failed to fetch logs");
       if (data.success) {
         setLogs(data.data.logs);
         setPagination(data.data.pagination);
       }
     } catch (err) {
       console.error("Failed to fetch logs:", err);
+      setError("No se ha podido cargar el registro. Vuelve a intentarlo.");
     } finally {
       setLoading(false);
     }
@@ -99,6 +103,10 @@ export default function LogsPage() {
 
   return (
     <div className="space-y-6">
+      {error && <div role="alert" className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">
+        <p>{error}</p>
+        <button type="button" className="ui-button mt-3" onClick={() => { setLoading(true); void fetchLogs(); }}>Volver a cargar</button>
+      </div>}
       {/* Filters */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-background p-2">
@@ -108,7 +116,7 @@ export default function LogsPage() {
               onClick={() => handleFilterChange(status)}
               aria-pressed={statusFilter === status}
               className={`
-                min-h-10 px-3 py-2 rounded-lg text-xs font-medium transition-colors
+                min-h-11 px-3 py-2 rounded-lg text-xs font-medium transition-colors
                 ${
                   statusFilter === status
                     ? "bg-accent/10 text-accent border border-accent/30"
@@ -164,7 +172,7 @@ export default function LogsPage() {
                   ))}
                 </>
               )}
-              {!loading && logs.length === 0 && (
+              {!loading && !error && logs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-muted sm:px-6">
                     No se han encontrado registros
@@ -220,7 +228,7 @@ export default function LogsPage() {
                   setLoading(true);
                   setPage(page - 1);
                 }}
-                className="ui-button min-h-10 px-3 text-xs"
+                className="ui-button min-h-11 px-3 text-xs"
               >
                 Retroceder
               </button>
@@ -233,7 +241,7 @@ export default function LogsPage() {
                   setLoading(true);
                   setPage(page + 1);
                 }}
-                className="ui-button min-h-10 px-3 text-xs"
+                className="ui-button min-h-11 px-3 text-xs"
               >
                 Avanzar
               </button>
