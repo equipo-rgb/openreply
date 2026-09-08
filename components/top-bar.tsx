@@ -14,7 +14,7 @@ const pageTitles: Record<string, string> = {
   "/campaigns/new": "Crear campaña",
   "/automations": "Campañas",
   "/automations/new": "Crear campaña",
-  "/logs": "DM Logs",
+  "/logs": "Registro de DMs",
   "/settings": "Settings",
   "/diagnostics": "Diagnostics",
 };
