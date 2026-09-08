@@ -91,14 +91,13 @@ services:
         condition: service_started
 
   higiene:
-    image: postgres:16-alpine
+    # Misma imagen que la app: el script usa pg, no psql, porque la imagen de
+    # Node no trae cliente de Postgres y en Swarm no hay bind mounts comodos.
+    image: openreply-dia:latest
     restart: unless-stopped
-    command: ["sh", "/higiene/higiene.sh"]
+    command: ["node", "scripts/higiene.mjs"]
     environment:
       DATABASE_URL: postgresql://openreply:${POSTGRES_PASSWORD}@postgres:5432/openreply
-    volumes:
-      - ../scripts/higiene.sh:/higiene/higiene.sh:ro
-      - ../scripts/higiene.sql:/higiene/higiene.sql:ro
     depends_on:
       postgres:
         condition: service_healthy

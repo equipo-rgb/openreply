@@ -5,7 +5,7 @@ Rama de trabajo: `dia`. Cambios respecto al original:
 
 - Sin Vercel Analytics.
 - `deploy/easypanel.compose.yml`: stack completo para easypanel (web, worker, cron, higiene, postgres, redis).
-- `scripts/higiene.sh` + `scripts/higiene.sql`: apaga campañas de reels muertos (60 días sin vida, 30 sin DMs) y el trigger por DM de stories efímeras (48 h).
+- `scripts/higiene.mjs` + `scripts/higiene.sql`: apaga campañas de reels muertos (60 días sin vida, 30 sin DMs) y el trigger por DM de stories efímeras (48 h).
 - `app/api/external/automations`: endpoint con Bearer para que Jarvis cree campañas (ver Task 8).
 
 Convenciones de campañas:
@@ -29,12 +29,12 @@ En produccion:
 
    | Servicio | Origen | Comando | Notas |
    |---|---|---|---|
-   | `postgres` | plantilla Postgres 16 de easypanel | - | base `openreply` |
+   | `postgres` | plantilla Postgres de easypanel | - | base `openreply`, usuario `postgres`; la contrasena la genera el panel |
    | `redis` | plantilla Redis 7 de easypanel | - | |
-   | `web` | `ghcr.io/equipo-rgb/openreply:dia` | `sh -c "npx prisma migrate deploy && npm run start"` | dominio `dm.d-ia.es`, puerto 3000 |
+   | `web` | `ghcr.io/equipo-rgb/openreply:dia` | `sh -c "npx prisma migrate deploy && npm run start"` | dominio `dm.d-ia.es` apuntando al **puerto 80** |
    | `worker` | misma imagen | `npm run worker` | |
-   | `cron` | misma imagen | `sh scripts/cron.sh` | `CRON_BASE_URL=http://web:3000` |
-   | `higiene` | `postgres:16-alpine` | `sh /higiene/higiene.sh` | monta `scripts/higiene.sh` y `.sql` |
+   | `cron` | misma imagen | `sh scripts/cron.sh` | `CRON_BASE_URL=http://openreply_web:80` |
+   | `higiene` | misma imagen | `node scripts/higiene.mjs` | solo necesita `DATABASE_URL` |
 
 3. Traefik y el certificado de Let's Encrypt los gestiona easypanel al asignar el
    dominio. Traefik enruta por fichero generado (`/etc/easypanel/traefik/config/main.yaml`),
@@ -55,5 +55,20 @@ Deploy en `web`, `worker` y `cron`.
 - El compose no publica puertos al host: `web` se sirve por Traefik en easypanel.
   Para comprobar la salud en local: `docker exec <contenedor-web> node -e
   "fetch('http://localhost:3000/api/health').then(r=>r.text()).then(console.log)"`.
-- El SQL de higiene se puede probar a mano sin esperar a las 04:30 UTC:
-  `docker exec <contenedor-higiene> sh -c 'psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /higiene/higiene.sql'`.
+- El SQL de higiene se puede probar a mano sin esperar a las 04:30 UTC, con la
+  imagen de la app: `docker run --rm --network easypanel-openreply -e DATABASE_URL=... \
+  --entrypoint node ghcr.io/equipo-rgb/openreply:dia -e "...query(fs.readFileSync('scripts/higiene.sql','utf8'))..."`.
+
+## Trampas de easypanel que costaron tiempo (2026-09-08)
+
+- easypanel inyecta `PORT=80` en los servicios App, asi que Next escucha en el 80
+  aunque en local use el 3000. El dominio tiene que apuntar al **puerto 80**, o
+  Traefik devuelve 502.
+- El Postgres y el Redis de easypanel generan credenciales propias. Hay que copiar
+  sus **cadenas de conexion internas** desde el panel: el Redis lleva contrasena
+  (`redis://default:...@openreply_redis:6379`) y sin ella `/api/health` no
+  responde, se queda colgado reintentando.
+- Los hosts internos son `<proyecto>_<servicio>`: `openreply_postgres`,
+  `openreply_redis`, `openreply_web`.
+- Editar el Environment no basta: hay que Guardar y despues pulsar Deploy, o el
+  contenedor sigue con las variables viejas.
