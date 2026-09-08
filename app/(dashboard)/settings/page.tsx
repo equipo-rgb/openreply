@@ -119,7 +119,7 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="panel rounded p-8 h-64" />;
+    return <div className="panel rounded-xl p-8 h-64" />;
   }
 
   const accounts = data?.instagramAccounts ?? [];
@@ -128,7 +128,7 @@ export default function SettingsPage() {
     membersData?.currentUserRole === "ADMIN";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-3xl space-y-6">
       {/* Surfaces the ?instagram= code the OAuth routes redirect back with.
           Needs a Suspense boundary: useSearchParams in a prerendered client
           page fails the production build without one. */}
@@ -136,11 +136,11 @@ export default function SettingsPage() {
         <InstagramConnectNotice />
       </Suspense>
 
-      <section className="panel rounded p-4 sm:p-6">
-        <h2 className="text-base font-semibold mb-6">Conexión con Instagram</h2>
+      <section className="panel rounded-xl p-5 sm:p-7">
+        <h2 className="text-base font-medium tracking-tight mb-6">Conexión con Instagram</h2>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-border">
             <div>
               <p className="text-sm font-medium text-foreground">Estado</p>
               <p className="text-xs text-muted mt-0.5">
@@ -158,7 +158,7 @@ export default function SettingsPage() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-border">
             <div>
               <p className="text-sm font-medium text-foreground">Cuentas</p>
               <p className="text-xs text-muted mt-0.5">
@@ -179,7 +179,7 @@ export default function SettingsPage() {
             {accounts.map((account) => (
               <div
                 key={account.id}
-                className="flex flex-col gap-3 rounded border border-border bg-surface/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 rounded-lg border border-border bg-background p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-semibold text-foreground">
@@ -196,7 +196,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => disconnectInstagram(account.id)}
                   disabled={busy === `disconnect:${account.id}`}
-                  className="inline-flex items-center justify-center rounded border border-error/20 px-4 py-2 text-sm font-medium text-error transition-all hover:border-error/40 hover:bg-error/10 disabled:opacity-50"
+                  className="ui-button ui-button-danger"
                 >
                   {busy === `disconnect:${account.id}`
                     ? "Desconectando..."
@@ -207,18 +207,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex gap-3">
+        <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-3">
           <a
             href="/api/instagram/connect"
-            className="px-4 py-2 rounded text-sm font-medium transition-colors bg-accent text-white hover:bg-accent-hover"
+            className="ui-button ui-button-primary"
           >
             {accounts.length > 0 ? "Conectar otra cuenta" : "Conectar Instagram"}
           </a>
         </div>
       </section>
 
-      <section className="panel rounded p-4 sm:p-6">
-        <h2 className="text-base font-semibold mb-6">Team</h2>
+      <section className="panel rounded-xl p-5 sm:p-7">
+        <h2 className="text-base font-medium tracking-tight mb-6">Team</h2>
         <div className="space-y-3">
           {membersData?.members.map((member) => (
             <div
@@ -319,8 +319,8 @@ export default function SettingsPage() {
         )}
       </section>
 
-      <section className="panel rounded p-4 sm:p-6">
-        <h2 className="text-base font-semibold mb-6">Usage</h2>
+      <section className="panel rounded-xl p-5 sm:p-7">
+        <h2 className="text-base font-medium tracking-tight mb-6">Usage</h2>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium text-foreground">
