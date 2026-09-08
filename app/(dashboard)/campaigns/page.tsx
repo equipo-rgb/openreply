@@ -258,7 +258,7 @@ export default function CampaignsPage() {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="panel rounded p-6 h-36" />
+          <div key={i} className="panel rounded-xl p-6 h-36" />
         ))}
       </div>
     );
@@ -299,13 +299,13 @@ export default function CampaignsPage() {
           )}
           <Link
             href="/campaigns/import"
-            className="flex-1 rounded border border-border px-4 py-2 text-center text-sm font-medium text-muted hover:text-foreground sm:flex-none"
+            className="ui-button flex-1 sm:flex-none"
           >
             Importar
           </Link>
           <Link
             href="/campaigns/new"
-            className="flex-1 rounded bg-accent px-4 py-2 text-center text-sm font-medium text-white hover:bg-accent-hover sm:flex-none"
+            className="ui-button ui-button-primary flex-1 sm:flex-none"
           >
             Crear campaña
           </Link>
@@ -319,17 +319,17 @@ export default function CampaignsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar campañas por nombre, palabra clave o mensaje…"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+            className="ui-field"
           />
-          <div className="inline-flex shrink-0 rounded-lg bg-surface p-1">
+          <div className="inline-flex shrink-0 rounded-lg border border-border bg-background p-1">
             {(["all", "active", "paused"] as const).map((s) => (
               <button
                 key={{ all: "Todas", active: "Activas", paused: "Pausadas" }[s]}
                 type="button"
                 onClick={() => setStatusFilter(s)}
-                className={`rounded-md px-3 py-1.5 text-sm capitalize transition-colors ${
+                className={`rounded-md px-4 py-2 text-sm transition-colors ${
                   statusFilter === s
-                    ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
+                    ? "bg-surface-hover font-medium text-foreground"
                     : "text-muted hover:text-foreground"
                 }`}
               >
@@ -342,14 +342,14 @@ export default function CampaignsPage() {
 
       {/* Empty state */}
       {automations.length === 0 && (
-        <div className="panel rounded p-8 text-center sm:p-12">
+        <div className="panel rounded-xl p-8 text-center sm:py-20 sm:px-12">
           <h3 className="text-lg font-semibold mb-2">Todavía no hay campañas</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
             Crea tu primera campaña de comentarios a DM para convertir una publicación o reel en una conversación con resultados medibles.
           </p>
           <Link
             href="/campaigns/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+            className="ui-button ui-button-primary"
           >
             Crear campaña
           </Link>
@@ -358,7 +358,7 @@ export default function CampaignsPage() {
 
       {/* No matches for the current filter */}
       {automations.length > 0 && filtered.length === 0 && (
-        <div className="panel rounded p-8 text-center text-sm text-muted">
+        <div className="panel rounded-xl p-8 text-center text-sm text-muted">
           Ninguna campaña coincide con tu búsqueda.
         </div>
       )}
@@ -371,7 +371,15 @@ export default function CampaignsPage() {
           <div
             key={auto.id}
             onClick={() => router.push(`/campaigns/${auto.id}`)}
-            className="panel rounded p-4 hover:border-border-hover transition-all cursor-pointer"
+            tabIndex={0}
+            role="link"
+            aria-label={`Abrir ${auto.name}`}
+            onKeyDown={(event) => {
+              if (event.target === event.currentTarget && event.key === "Enter") {
+                router.push(`/campaigns/${auto.id}`);
+              }
+            }}
+            className="panel rounded-xl p-5 hover:border-border-hover transition-colors cursor-pointer sm:p-6"
           >
             {/* Wraps rather than compressing: on a phone the action buttons drop
                 to their own line instead of squeezing the campaign summary. */}
@@ -391,7 +399,7 @@ export default function CampaignsPage() {
                     <img
                       src={thumbnails[auto.postId]}
                       alt="Reel de la campaña"
-                      className="w-12 h-12 rounded object-cover border border-border hover:border-border-hover"
+                      className="w-16 h-20 rounded-lg object-cover border border-border hover:border-border-hover"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -409,7 +417,7 @@ export default function CampaignsPage() {
                     <img
                       src={thumbnails[auto.postId]}
                       alt="Publicación de la campaña"
-                      className="w-12 h-12 rounded object-cover border border-border"
+                      className="w-16 h-20 rounded-lg object-cover border border-border"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -419,12 +427,12 @@ export default function CampaignsPage() {
               )}
               <div className="min-w-[12rem] flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <h3 className="text-sm font-semibold truncate">{auto.name}</h3>
+                  <h3 className="text-base font-medium tracking-tight truncate">{auto.name}</h3>
                   <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted">
                     @{auto.instagramAccount.username}
                   </span>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       auto.isActive
                         ? "bg-success/10 text-success"
                         : "bg-zinc-500/10 text-muted"
@@ -433,7 +441,7 @@ export default function CampaignsPage() {
                     {auto.isActive ? "Activa" : "Pausada"}
                   </span>
                   {auto.pendingNextReel && (
-                    <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-warning">
+                    <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
                       Esperando el próximo reel
                     </span>
                   )}
@@ -454,7 +462,7 @@ export default function CampaignsPage() {
                   {auto.keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-medium border border-accent/10"
+                      className="px-2 py-1 rounded-md bg-background text-muted text-xs font-medium border border-border"
                     >
                       {kw}
                     </span>
@@ -466,13 +474,13 @@ export default function CampaignsPage() {
 
                 {/* Tracked link sent */}
                 {auto.trackedLinks[0]?.trackedUrl && (
-                  <p className="mt-2 truncate font-mono text-xs text-zinc-500">
+                  <p className="mt-2 truncate font-mono text-xs text-muted">
                     {auto.trackedLinks[0].trackedUrl}
                   </p>
                 )}
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-zinc-500">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-muted">
                   <span className="font-medium text-foreground">
                     {auto._count.dmLogs} ejecuciones
                   </span>
@@ -506,7 +514,7 @@ export default function CampaignsPage() {
 
               {/* Actions */}
               <div
-                className="ml-auto flex items-center gap-2"
+                className="ml-auto flex items-center gap-3"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Copy reel URL */}
@@ -521,9 +529,12 @@ export default function CampaignsPage() {
                 {/* Toggle */}
                 <button
                   onClick={() => toggleActive(auto.id, auto.isActive)}
+                  role="switch"
+                  aria-checked={auto.isActive}
+                  aria-label={`${auto.isActive ? "Pausar" : "Activar"} ${auto.name}`}
                   className={`
                     relative w-11 h-6 rounded-full transition-colors
-                    ${auto.isActive ? "bg-accent" : "bg-zinc-300"}
+                    ${auto.isActive ? "bg-accent" : "bg-surface-hover"}
                   `}
                 >
                   <span
@@ -541,6 +552,7 @@ export default function CampaignsPage() {
                       setMenuOpenId((cur) => (cur === auto.id ? null : auto.id))
                     }
                     aria-label="Más acciones"
+                    aria-expanded={menuOpenId === auto.id}
                     className="px-2 py-1 rounded text-lg leading-none text-muted hover:text-foreground"
                   >
                     ⋯

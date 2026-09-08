@@ -9,14 +9,14 @@
 import { usePathname } from "next/navigation";
 
 const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/dashboard": "Panel",
   "/campaigns": "Campañas",
   "/campaigns/new": "Crear campaña",
   "/automations": "Campañas",
   "/automations/new": "Crear campaña",
   "/logs": "Registro de DMs",
   "/settings": "Ajustes",
-  "/diagnostics": "Diagnostics",
+  "/diagnostics": "Diagnóstico",
 };
 
 interface TopBarProps {
@@ -31,11 +31,11 @@ export default function TopBar({
   instagramAccountCount,
 }: TopBarProps) {
   const pathname = usePathname();
-  const title = pageTitles[pathname] ?? "Dashboard";
+  const title = pageTitles[pathname] ?? (pathname.startsWith("/campaigns/") ? (pathname.endsWith("/edit") ? "Editar campaña" : "Campaña") : "Panel");
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 lg:px-8 border-b border-border bg-background"
+      className="relative z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 sm:px-6 lg:px-8"
       // Installed to the home screen the app starts at the very top of the
       // display, so without this the title sits under the clock and battery.
       // The inset is 0 in a browser tab and on desktop.
@@ -47,16 +47,16 @@ export default function TopBar({
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <button
           onClick={onMenuClick}
-          className="lg:hidden shrink-0 px-2.5 py-1.5 rounded border border-border text-sm text-muted hover:text-foreground"
+          className="ui-button lg:hidden shrink-0 px-3"
           aria-label="Abrir o cerrar menú lateral"
         >
           Menú
         </button>
-        <h1 className="truncate text-base font-semibold sm:text-lg">{title}</h1>
+        <h1 className="truncate text-base font-medium tracking-tight">{title}</h1>
       </div>
 
       {instagramAccountCount > 0 ? (
-        <p className="shrink-0 truncate text-sm text-muted">
+        <p className="max-w-[40%] shrink-0 truncate rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted">
           {instagramAccountCount > 1
             ? `${instagramAccountCount} cuentas`
             : `@${instagramUsername}`}
@@ -64,7 +64,7 @@ export default function TopBar({
       ) : (
         <a
           href="/api/instagram/connect"
-          className="shrink-0 whitespace-nowrap text-sm font-medium px-3 py-1.5 rounded bg-accent text-white hover:bg-accent-hover"
+          className="ui-button ui-button-primary shrink-0"
         >
           {/* Full label needs more room than a 360px header has to spare. */}
           <span className="sm:hidden">Conectar</span>
