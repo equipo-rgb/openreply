@@ -1,4 +1,4 @@
-name: Build & publish Docker image
+name: Build & publish GHCR (D-IA)
 
 # Construye la imagen de OpenReply (fork de D-IA) y la sube a ghcr.io.
 # El VPS (easypanel, Docker Swarm) no construye: solo hace pull de esta
