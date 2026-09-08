@@ -81,11 +81,14 @@ export default function CampaignsPage() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">(
     "all"
   );
 
   const fetchAutomations = useCallback(async () => {
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (selectedAccountId !== "all") {
@@ -96,9 +99,11 @@ export default function CampaignsPage() {
         { cache: "no-store" }
       );
       const data = await res.json();
-      if (data.success) setAutomations(data.data);
+      if (!res.ok || !data.success) throw new Error("Failed to fetch campaigns");
+      setAutomations(data.data);
     } catch (err) {
       console.error("Failed to fetch campaigns:", err);
+      setError("No se han podido cargar las campañas. Vuelve a intentarlo.");
     } finally {
       setLoading(false);
     }
@@ -198,17 +203,25 @@ export default function CampaignsPage() {
   }
 
   async function toggleActive(id: string, isActive: boolean) {
+    if (busyId) return;
+    setBusyId(id);
+    setError(null);
     try {
-      await fetch(`/api/automations?id=${id}`, {
+      const res = await fetch(`/api/automations?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !isActive }),
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error("Failed to update campaign");
       setAutomations((prev) =>
         prev.map((a) => (a.id === id ? { ...a, isActive: !isActive } : a))
       );
     } catch (err) {
       console.error("Failed to toggle:", err);
+      setError("No se ha podido cambiar el estado. La campaña conserva su estado anterior.");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -224,16 +237,25 @@ export default function CampaignsPage() {
       );
     } catch (err) {
       console.error("Failed to copy reel URL:", err);
+      setError("No se ha podido copiar el enlace. Vuelve a intentarlo.");
     }
   }
 
   async function deleteAutomation(id: string) {
+    if (busyId) return;
     if (!confirm("¿Eliminar esta campaña? No se puede deshacer.")) return;
+    setBusyId(id);
+    setError(null);
     try {
-      await fetch(`/api/automations?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/automations?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error("Failed to delete campaign");
       setAutomations((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       console.error("Failed to delete:", err);
+      setError("No se ha podido eliminar la campaña. Vuelve a intentarlo.");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -241,16 +263,22 @@ export default function CampaignsPage() {
   // list never loads (the DM trigger, the follow-up, the link button label)
   // still come along.
   async function duplicateAutomation(id: string) {
+    if (busyId) return;
+    setBusyId(id);
+    setError(null);
     setMenuOpenId(null);
     try {
       const res = await fetch(`/api/automations/duplicate?id=${id}`, {
         method: "POST",
       });
       const data = await res.json();
-      if (data.success) void fetchAutomations();
-      else console.error("Duplicate failed:", data.error);
+      if (!res.ok || !data.success) throw new Error("Failed to duplicate campaign");
+      await fetchAutomations();
     } catch (err) {
       console.error("Failed to duplicate:", err);
+      setError("No se ha podido duplicar la campaña. Vuelve a intentarlo.");
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -278,6 +306,12 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div role="alert" className="rounded-xl border border-error/30 bg-error/10 p-4 text-sm">
+          <p>{error}</p>
+          <button type="button" className="ui-button mt-3" onClick={() => { setLoading(true); void fetchAutomations(); }}>Volver a cargar</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -327,7 +361,8 @@ export default function CampaignsPage() {
                 key={{ all: "Todas", active: "Activas", paused: "Pausadas" }[s]}
                 type="button"
                 onClick={() => setStatusFilter(s)}
-                className={`rounded-md px-4 py-2 text-sm transition-colors ${
+                aria-pressed={statusFilter === s}
+                className={`min-h-11 rounded-md px-4 py-2 text-sm transition-colors ${
                   statusFilter === s
                     ? "bg-surface-hover font-medium text-foreground"
                     : "text-muted hover:text-foreground"
@@ -341,7 +376,7 @@ export default function CampaignsPage() {
       )}
 
       {/* Empty state */}
-      {automations.length === 0 && (
+      {!error && automations.length === 0 && (
         <div className="panel rounded-xl p-8 text-center sm:py-20 sm:px-12">
           <h3 className="text-lg font-semibold mb-2">Todavía no hay campañas</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
@@ -480,7 +515,7 @@ export default function CampaignsPage() {
                 )}
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-muted">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-muted ui-tabular">
                   <span className="font-medium text-foreground">
                     {auto._count.dmLogs} ejecuciones
                   </span>
@@ -521,19 +556,21 @@ export default function CampaignsPage() {
                 {auto.postUrl && (
                   <button
                     onClick={() => void copyReelUrl(auto)}
-                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-border-hover hover:text-foreground"
+                    className="min-h-11 shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-border-hover hover:text-foreground"
                   >
                     {copiedId === auto.id ? "¡Copiado!" : "Copiar URL"}
                   </button>
                 )}
                 {/* Toggle */}
                 <button
+                  disabled={busyId !== null}
+                  aria-busy={busyId === auto.id}
                   onClick={() => toggleActive(auto.id, auto.isActive)}
                   role="switch"
                   aria-checked={auto.isActive}
                   aria-label={`${auto.isActive ? "Pausar" : "Activar"} ${auto.name}`}
                   className={`
-                    relative w-11 h-6 rounded-full transition-colors
+                    ui-switch relative w-11 h-6 rounded-full transition-colors
                     ${auto.isActive ? "bg-accent" : "bg-surface-hover"}
                   `}
                 >
@@ -546,14 +583,20 @@ export default function CampaignsPage() {
                 </button>
 
                 {/* Kebab menu */}
-                <div className="relative">
+                <div className="relative" onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.stopPropagation();
+                    setMenuOpenId(null);
+                    event.currentTarget.querySelector<HTMLButtonElement>("button")?.focus();
+                  }
+                }}>
                   <button
                     onClick={() =>
                       setMenuOpenId((cur) => (cur === auto.id ? null : auto.id))
                     }
                     aria-label="Más acciones"
                     aria-expanded={menuOpenId === auto.id}
-                    className="px-2 py-1 rounded text-lg leading-none text-muted hover:text-foreground"
+                    className="min-h-11 min-w-11 px-2 py-1 rounded text-lg leading-none text-muted hover:text-foreground"
                   >
                     ⋯
                   </button>
@@ -565,17 +608,19 @@ export default function CampaignsPage() {
                       />
                       <div className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
                         <button
+                          disabled={busyId !== null}
                           onClick={() => void duplicateAutomation(auto.id)}
-                          className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+                          className="block min-h-11 w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
                         >
                           Duplicar
                         </button>
                         <button
+                          disabled={busyId !== null}
                           onClick={() => {
                             setMenuOpenId(null);
                             void deleteAutomation(auto.id);
                           }}
-                          className="block w-full px-3 py-2 text-left text-sm text-error hover:bg-surface-hover"
+                          className="block min-h-11 w-full px-3 py-2 text-left text-sm text-error hover:bg-surface-hover"
                         >
                           Eliminar
                         </button>
