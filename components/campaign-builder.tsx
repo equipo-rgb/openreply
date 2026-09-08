@@ -12,7 +12,7 @@
  * follow / email / follow-up steps arrive in later turns.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import PostPicker from "@/components/post-picker";
@@ -122,7 +122,7 @@ function Toggle({
       role="switch"
       aria-checked={on}
       aria-label={label}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+      className={`ui-switch relative h-6 w-11 shrink-0 rounded-full transition-colors ${
         on ? "bg-accent" : "bg-surface-hover"
       }`}
     >
@@ -142,6 +142,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus({ preventScroll: true });
+      errorRef.current?.scrollIntoView({ block: "center" });
+    }
+  }, [error]);
 
   const [name, setName] = useState("");
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
@@ -473,7 +480,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           setImportQueue(remaining);
           prefillFromRow(remaining[0]);
           setSaving(false);
-          if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+          document.getElementById("main-content")?.scrollTo({ top: 0 });
           return;
         }
         if (importQueue) {
@@ -500,8 +507,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             ? `${firstField}: ${fieldErrors[firstField][0]}`
             : data.error ?? "No se ha podido guardar la campaña"
         );
-        if (typeof window !== "undefined")
-          window.scrollTo({ top: 0, behavior: "smooth" });
+
       }
     } catch {
       setError("No se ha podido guardar la campaña");
@@ -524,7 +530,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       }
       setImportQueue(remaining);
       prefillFromRow(remaining[0]);
-      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+      document.getElementById("main-content")?.scrollTo({ top: 0 });
       return;
     }
     // Last row skipped — finish the import.
@@ -634,11 +640,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
       {/* min-w-0 on the cells: a grid item defaults to min-width:auto, so a
           long string widens the whole page instead of wrapping. */}
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,560px)_minmax(320px,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,560px)_minmax(320px,1fr)]">
       {/* Left: controls */}
       <div className="space-y-5 min-w-0">
         {error && (
-          <div role="alert" className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">
+          <div ref={errorRef} tabIndex={-1} role="alert" className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">
             {error}
           </div>
         )}
@@ -782,7 +788,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                           prev.filter((_, idx) => idx !== i)
                         )
                       }
-                      className="shrink-0 px-2 text-muted hover:text-error"
+                      className="min-h-11 min-w-11 shrink-0 px-2 text-muted hover:text-error"
                       aria-label="Eliminar respuesta"
                     >
                       ✕
@@ -796,7 +802,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onClick={() =>
                     setPublicReplyMessages((prev) => [...prev, ""])
                   }
-                  className="text-xs font-medium text-accent hover:underline"
+                  className="min-h-11 text-xs font-medium text-accent hover:underline"
                 >
                   + Añadir otra respuesta
                 </button>

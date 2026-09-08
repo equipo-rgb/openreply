@@ -490,7 +490,7 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
     tab === "dmTrigger" && !props.dmTriggerEnabled ? "dm" : tab;
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex min-w-0 max-w-full flex-col items-center gap-5">
       <Phone>
         {activeTab === "post" && (
           <PostScreen
@@ -555,13 +555,13 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
         )}
       </Phone>
 
-      <div className="inline-flex rounded-full bg-surface p-1">
+      <div className="flex max-w-full flex-wrap justify-center gap-1 rounded-xl bg-surface p-1">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => onTabChange(t.key)}
-            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+            className={`min-h-11 rounded-full px-4 py-2 text-sm transition-colors ${
               activeTab === t.key
                 ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
                 : "text-muted hover:text-foreground"
