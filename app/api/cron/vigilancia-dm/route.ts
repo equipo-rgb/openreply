@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { construirAviso, type FalloDM, type TokenPorCaducar } from "@/lib/vigilancia/aviso";
+import {
+  construirAviso,
+  firmaDelAviso,
+  type FalloDM,
+  type TokenPorCaducar,
+} from "@/lib/vigilancia/aviso";
+import { getRedisConnection } from "@/lib/queue/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +15,10 @@ export const dynamic = "force-dynamic";
 // mejor repetir un aviso que perder uno por un desfase de relojes.
 const VENTANA_MINUTOS = 20;
 const DIAS_AVISO_TOKEN = 7;
+// Mientras algo siga roto, el mismo aviso no se repite antes de una hora. Un
+// aviso que llega cada cuarto de hora se ignora, y entonces deja de avisar.
+const SILENCIO_MISMO_AVISO_SEGUNDOS = 60 * 60;
+const CLAVE_ULTIMO_AVISO = "vigilancia:ultima-firma";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -62,6 +72,27 @@ export async function GET(request: NextRequest) {
   const aviso = construirAviso({ fallos, tokensPorCaducar });
   if (!aviso) {
     return NextResponse.json({ success: true, avisado: false, fallos: 0 });
+  }
+
+  // Si es exactamente el mismo problema que ya avisamos hace menos de una hora,
+  // se calla. Un problema NUEVO cambia la firma y suena enseguida.
+  const firma = firmaDelAviso({ fallos, tokensPorCaducar });
+  try {
+    const redis = getRedisConnection();
+    const anterior = await redis.get(CLAVE_ULTIMO_AVISO);
+    if (anterior === firma) {
+      return NextResponse.json({
+        success: true,
+        avisado: false,
+        motivo: "mismo aviso que el anterior, en silencio",
+        fallos: fallos.length,
+      });
+    }
+    await redis.set(CLAVE_ULTIMO_AVISO, firma, "EX", SILENCIO_MISMO_AVISO_SEGUNDOS);
+  } catch (error) {
+    // Sin Redis se avisa igual: repetir un aviso es mucho menos grave que
+    // callarse uno.
+    console.warn(`[vigilancia] no se pudo leer el silencio en Redis: ${String(error)}`);
   }
 
   const envio = await avisarASlack(aviso);

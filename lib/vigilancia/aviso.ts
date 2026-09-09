@@ -61,3 +61,19 @@ export function construirAviso(datos: {
 
   return lineas.join("\n");
 }
+
+/**
+ * Firma de un aviso: que tipos de problema contiene, sin cuantos ni cuando.
+ *
+ * Sirve para no repetir el mismo aviso cada cuarto de hora mientras algo sigue
+ * roto. Un aviso que se repite se ignora, y entonces deja de avisar. Si aparece
+ * un problema DISTINTO, la firma cambia y ese si vuelve a sonar enseguida.
+ */
+export function firmaDelAviso(datos: {
+  fallos: FalloDM[];
+  tokensPorCaducar: TokenPorCaducar[];
+}): string {
+  const motivos = [...new Set(datos.fallos.map((f) => f.motivo.trim() || "sin motivo"))].sort();
+  const tokens = [...new Set(datos.tokensPorCaducar.map((t) => t.cuenta))].sort();
+  return JSON.stringify({ motivos, tokens });
+}

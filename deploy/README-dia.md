@@ -72,8 +72,14 @@ cubre ese hueco y lo llama el contenedor `cron`:
   dias. Un token caducado es el fallo mas silencioso que hay: los DMs paran y
   nada da error.
 
-Solo habla cuando hay algo que contar. El silencio significa que todo va bien; un
-aviso que llega cada hora sin motivo se acaba ignorando.
+Solo habla cuando hay algo que contar, y **no repite**: mientras el problema siga
+siendo el mismo, no vuelve a avisar antes de una hora (firma del aviso guardada en
+Redis con caducidad). Si aparece un problema DISTINTO, la firma cambia y suena
+enseguida, sin esperar. Asi un fallo persistente no revienta el canal, que es lo
+que hace que estos avisos se acaben ignorando.
+
+Si Redis no responde, avisa igualmente: repetir un aviso es menos grave que
+callarse uno.
 
 Para avisar necesita uno de los dos caminos, en el servicio `cron`:
 

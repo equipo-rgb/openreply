@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { construirAviso } from "@/lib/vigilancia/aviso";
+import { construirAviso, firmaDelAviso } from "@/lib/vigilancia/aviso";
 
 describe("construirAviso", () => {
   it("no avisa cuando no hay nada que contar", () => {
@@ -35,5 +35,37 @@ describe("construirAviso", () => {
       tokensPorCaducar: [],
     });
     expect(aviso).toContain("sin motivo registrado");
+  });
+});
+
+describe("firmaDelAviso", () => {
+  it("no cambia porque haya más fallos del mismo tipo", () => {
+    const uno = firmaDelAviso({
+      fallos: [{ campana: "A", cuenta: "m", motivo: "no acepta mensajes" }],
+      tokensPorCaducar: [],
+    });
+    const varios = firmaDelAviso({
+      fallos: [
+        { campana: "A", cuenta: "m", motivo: "no acepta mensajes" },
+        { campana: "B", cuenta: "p", motivo: "no acepta mensajes" },
+      ],
+      tokensPorCaducar: [],
+    });
+    expect(uno).toBe(varios);
+  });
+
+  it("cambia cuando aparece un problema distinto", () => {
+    const antes = firmaDelAviso({
+      fallos: [{ campana: "A", cuenta: "m", motivo: "no acepta mensajes" }],
+      tokensPorCaducar: [],
+    });
+    const despues = firmaDelAviso({
+      fallos: [
+        { campana: "A", cuenta: "m", motivo: "no acepta mensajes" },
+        { campana: "A", cuenta: "m", motivo: "token caducado" },
+      ],
+      tokensPorCaducar: [],
+    });
+    expect(antes).not.toBe(despues);
   });
 });
