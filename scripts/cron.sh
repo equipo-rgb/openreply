@@ -39,6 +39,7 @@ echo "[cron] scheduler started, target $BASE_URL"
 
 last_slot=""
 last_daily=""
+last_vigilancia=""
 
 while true; do
   now=$(date -u '+%Y-%m-%d %H:%M')
@@ -59,12 +60,28 @@ while true; do
       ;;
   esac
 
+  # Vigilancia de los DMs cada cuarto de hora. Desde que ManyChat se apago no
+  # hay sistema de respaldo: si los envios fallan, el unico aviso posible es
+  # que alguien se queje. Solo habla cuando hay algo que contar.
+  case "$minute" in
+    00|15|30|45)
+      if [ "$last_vigilancia" != "$hhmm" ]; then
+        last_vigilancia="$hhmm"
+        call vigilancia-dm
+      fi
+      ;;
+  esac
+
   # Once a day, early: the token refresh has a 10-day window before expiry, so
   # the exact hour does not matter — only that it happens every day.
   if [ "$hour" = "05" ] && [ "$last_daily" != "$today" ]; then
     last_daily="$today"
     call refresh-tokens
     call snapshot-followers
+    # Con ?diario=1 mira ademas que ningun token de Instagram este a punto de
+    # caducar. Caducar es el fallo mas silencioso de todos: los DMs paran sin
+    # que nada de error.
+    call "vigilancia-dm?diario=1"
   fi
 
   # Half a minute: short enough never to skip a slot, long enough to stay idle.

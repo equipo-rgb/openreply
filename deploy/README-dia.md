@@ -59,6 +59,25 @@ Deploy en `web`, `worker` y `cron`.
   imagen de la app: `docker run --rm --network easypanel-openreply -e DATABASE_URL=... \
   --entrypoint node ghcr.io/equipo-rgb/openreply:dia -e "...query(fs.readFileSync('scripts/higiene.sql','utf8'))..."`.
 
+## Vigilancia de los DMs (2026-09-09)
+
+Desde que ManyChat se apago no hay sistema de respaldo: si OpenReply deja de
+enviar, nadie se entera hasta que alguien se queja. `app/api/cron/vigilancia-dm`
+cubre ese hueco y lo llama el contenedor `cron`:
+
+- **Cada 15 minutos**: DMs fallidos en los ultimos 20 minutos, agrupados por
+  motivo. La ventana se solapa a proposito con el intervalo, porque perder un
+  aviso es peor que repetirlo.
+- **Una vez al dia** (`?diario=1`): tokens de Instagram que caduquen dentro de 7
+  dias. Un token caducado es el fallo mas silencioso que hay: los DMs paran y
+  nada da error.
+
+Solo habla cuando hay algo que contar. El silencio significa que todo va bien; un
+aviso que llega cada hora sin motivo se acaba ignorando.
+
+Necesita `SLACK_WEBHOOK_URL`. Sin esa variable no falla: escribe el aviso en el
+log del contenedor, que es donde mira quien diagnostica.
+
 ## Trampas de easypanel que costaron tiempo (2026-09-08)
 
 - easypanel inyecta `PORT=80` en los servicios App, asi que Next escucha en el 80
