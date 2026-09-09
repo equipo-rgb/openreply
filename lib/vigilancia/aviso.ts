@@ -20,11 +20,41 @@ export interface TokenPorCaducar {
   dias: number;
 }
 
+
+/**
+ * Fallos que NO son problema nuestro: los provoca la otra persona o el propio
+ * hilo, y no hay nada que arreglar en el sistema.
+ *
+ * Se callan a proposito. Un canal de avisos lleno de "esta cuenta no admite
+ * mensajes" es un canal que nadie lee, y entonces el aviso que si importaba
+ * pasa desapercibido.
+ *
+ * Los patrones salen de los que el propio worker ya reconoce como rechazos que
+ * no tiene sentido reintentar (`NON_TEMPLATE_REJECTIONS` en dm-worker).
+ */
+const RUIDO_DEL_DESTINATARIO = [
+  /outside of allowed window/i,
+  /invalid for a private reply/i,
+  /requested user cannot be found/i,
+  /isn.t available/i,
+  /no acepta mensajes/i,
+  /Meta API Error 551\b/i,
+];
+
+export function esRuidoDelDestinatario(motivo: string): boolean {
+  return RUIDO_DEL_DESTINATARIO.some((patron) => patron.test(motivo));
+}
+
 export function construirAviso(datos: {
   fallos: FalloDM[];
   tokensPorCaducar: TokenPorCaducar[];
 }): string | null {
-  const { fallos, tokensPorCaducar } = datos;
+  const { tokensPorCaducar } = datos;
+  // Lo que no podemos arreglar no se cuenta como aviso. Si TODO lo que ha
+  // fallado es ruido del destinatario, no hay nada que decir.
+  const fallos = datos.fallos.filter((f) => !esRuidoDelDestinatario(f.motivo));
+  const ignorados = datos.fallos.length - fallos.length;
+
   if (fallos.length === 0 && tokensPorCaducar.length === 0) return null;
 
   const lineas: string[] = [];
@@ -47,6 +77,11 @@ export function construirAviso(datos: {
     );
     for (const [motivo, veces] of [...porMotivo.entries()].sort((a, b) => b[1] - a[1])) {
       lineas.push(`   • ${veces} × ${motivo}`);
+    }
+    if (ignorados > 0) {
+      lineas.push(
+        `   (${ignorados} más por ajustes del destinatario o ventana cerrada, sin nada que arreglar)`,
+      );
     }
   }
 
@@ -73,7 +108,13 @@ export function firmaDelAviso(datos: {
   fallos: FalloDM[];
   tokensPorCaducar: TokenPorCaducar[];
 }): string {
-  const motivos = [...new Set(datos.fallos.map((f) => f.motivo.trim() || "sin motivo"))].sort();
+  const motivos = [
+    ...new Set(
+      datos.fallos
+        .filter((f) => !esRuidoDelDestinatario(f.motivo))
+        .map((f) => f.motivo.trim() || "sin motivo"),
+    ),
+  ].sort();
   const tokens = [...new Set(datos.tokensPorCaducar.map((t) => t.cuenta))].sort();
   return JSON.stringify({ motivos, tokens });
 }

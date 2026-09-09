@@ -72,6 +72,15 @@ cubre ese hueco y lo llama el contenedor `cron`:
   dias. Un token caducado es el fallo mas silencioso que hay: los DMs paran y
   nada da error.
 
+**Ignora lo que no es problema nuestro.** Un DM que falla porque la persona tiene
+los mensajes cerrados, porque la ventana de 24 horas ya cerro o porque la cuenta
+ya no existe no genera aviso: no hay nada que arreglar. Esos casos se resumen en
+una linea al final, y solo si ademas hay algo real que contar. Los patrones son
+los mismos que el worker ya reconoce como rechazos irreparables.
+
+Lo desconocido SI avisa: callarse un error que nadie ha visto antes es peor que
+una linea de mas.
+
 Solo habla cuando hay algo que contar, y **no repite**: mientras el problema siga
 siendo el mismo, no vuelve a avisar antes de una hora (firma del aviso guardada en
 Redis con caducidad). Si aparece un problema DISTINTO, la firma cambia y suena
