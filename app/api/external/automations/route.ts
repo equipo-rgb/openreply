@@ -58,6 +58,81 @@ function authorized(request: NextRequest): boolean {
   return timingSafeEqual(a, b);
 }
 
+/**
+ * GET /api/external/automations
+ *
+ * Estado de las campanas para Jarvis: DMs enviados, fallidos y clics.
+ *
+ * Existe para que Jarvis NO necesite credenciales del Postgres de OpenReply:
+ * los dos sistemas viven en proyectos de easypanel distintos, con redes
+ * separadas, y compartir la base entre ellos ata dos ciclos de vida que no
+ * tienen por que ir juntos.
+ *
+ * Parametros: `account` (username de Instagram, opcional) y `days` (ventana
+ * sobre la fecha de creacion, 1 a 90, por defecto 14).
+ */
+export async function GET(request: NextRequest) {
+  if (!authorized(request)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const params = request.nextUrl.searchParams;
+  const account = params.get("account");
+  const rawDays = Number(params.get("days") ?? 14);
+  const days = Number.isFinite(rawDays) ? Math.min(Math.max(Math.trunc(rawDays), 1), 90) : 14;
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const automations = await prisma.automation.findMany({
+    where: {
+      createdAt: { gt: since },
+      ...(account
+        ? { instagramAccount: { username: { equals: account, mode: "insensitive" } } }
+        : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      instagramAccount: { select: { username: true } },
+      _count: { select: { linkClicks: true } },
+    },
+  });
+
+  // Los recuentos por estado van en una sola agregacion, no en una consulta por
+  // campana: con 50 campanas eso serian 100 viajes a la base.
+  const porEstado = await prisma.dmLog.groupBy({
+    by: ["automationId", "status"],
+    where: { automationId: { in: automations.map((a) => a.id) } },
+    _count: { _all: true },
+  });
+
+  const conteo = new Map<string, { enviados: number; fallidos: number }>();
+  for (const fila of porEstado) {
+    const actual = conteo.get(fila.automationId) ?? { enviados: 0, fallidos: 0 };
+    if (fila.status === "SENT") actual.enviados += fila._count._all;
+    if (fila.status === "FAILED") actual.fallidos += fila._count._all;
+    conteo.set(fila.automationId, actual);
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      campanas: automations.map((a) => ({
+        id: a.id,
+        name: a.name,
+        cuenta: a.instagramAccount.username,
+        keywords: a.keywords,
+        activa: a.isActive,
+        triggerDm: a.dmTriggerEnabled,
+        creada: a.createdAt.toISOString(),
+        enviados: conteo.get(a.id)?.enviados ?? 0,
+        fallidos: conteo.get(a.id)?.fallidos ?? 0,
+        clics: a._count.linkClicks,
+      })),
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   if (!authorized(request)) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
