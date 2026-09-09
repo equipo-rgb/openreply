@@ -12,6 +12,15 @@ import { findMediaByPermalink } from "@/lib/external/resolve-post";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Un boton del DM. Meta admite hasta 3 y corta el titulo a 20 caracteres, asi
+ * que se valida aqui en vez de dejar que Instagram lo recorte en silencio.
+ */
+const linkSchema = z.object({
+  url: z.string().url(),
+  label: z.string().min(1).max(20),
+});
+
 const bodySchema = z.object({
   instagramUsername: z.string().min(1),
   name: z.string().min(1).max(100),
@@ -19,7 +28,17 @@ const bodySchema = z.object({
   postUrl: z.string().url().optional(),
   keywords: z.array(z.string().min(1).max(50)).min(1).max(10),
   dmMessage: z.string().min(1).max(1000),
+  // Forma antigua, un solo enlace sin etiqueta. Se mantiene para no romper a
+  // quien ya la use; `links` es la forma completa.
   trackedDestinationUrl: z.string().url().optional(),
+  links: z.array(linkSchema).max(3).optional(),
+  linkButtonLabel: z.string().max(20).optional(),
+  // DM de apertura: el mensaje corto con un boton que se manda antes del DM
+  // con el recurso, como en las campanas de ManyChat que esto sustituye.
+  openingDmMessage: z.string().max(640).optional(),
+  openingDmButtonLabel: z.string().max(20).optional(),
+  followUpMessage: z.string().max(1000).optional(),
+  followUpDelayMinutes: z.number().int().min(0).max(1440).optional(),
   dmTriggerEnabled: z.boolean().optional().default(false),
   publicReplyMessages: z.array(z.string().max(1000)).max(10).optional().default([]),
 });
@@ -88,16 +107,19 @@ export async function POST(request: NextRequest) {
     postUrl = found.permalink ?? data.postUrl;
   }
 
-  const trackedLinks = data.trackedDestinationUrl
-    ? [
-        {
-          workspaceId: account.workspaceId,
-          slug: generateTrackedLinkSlug(),
-          label: "Primary campaign link",
-          destinationUrl: data.trackedDestinationUrl,
-        },
-      ]
-    : [];
+  // `links` manda; `trackedDestinationUrl` es la forma antigua de un solo enlace.
+  const linksPedidos =
+    data.links ??
+    (data.trackedDestinationUrl
+      ? [{ url: data.trackedDestinationUrl, label: "Primary campaign link" }]
+      : []);
+
+  const trackedLinks = linksPedidos.map((link) => ({
+    workspaceId: account.workspaceId,
+    slug: generateTrackedLinkSlug(),
+    label: link.label,
+    destinationUrl: link.url,
+  }));
 
   const publicReplyList = data.publicReplyMessages.map((m) => m.trim()).filter(Boolean);
 
@@ -113,6 +135,13 @@ export async function POST(request: NextRequest) {
       matchAnyWord: false,
       dmTriggerEnabled: data.dmTriggerEnabled,
       dmMessage: data.dmMessage,
+      linkButtonLabel: data.linkButtonLabel ?? null,
+      openingDmEnabled: Boolean(data.openingDmMessage),
+      openingDmMessage: data.openingDmMessage ?? null,
+      openingDmButtonLabel: data.openingDmButtonLabel ?? null,
+      followUpEnabled: Boolean(data.followUpMessage),
+      followUpMessage: data.followUpMessage ?? null,
+      followUpDelayMinutes: data.followUpDelayMinutes ?? 0,
       publicReplyEnabled: publicReplyList.length > 0,
       publicReplyMessages: publicReplyList,
       publicReplyMessage: publicReplyList[0] ?? null,
@@ -136,6 +165,10 @@ export async function POST(request: NextRequest) {
         postId: automation.postId,
         pendingNextReel: automation.pendingNextReel,
         trackedUrl: primary ? buildTrackedUrl(primary.slug, process.env.NEXTAUTH_URL) : null,
+        trackedUrls: automation.trackedLinks.map((link) => ({
+          label: link.label,
+          url: buildTrackedUrl(link.slug, process.env.NEXTAUTH_URL),
+        })),
       },
     },
     { status: 201 }
