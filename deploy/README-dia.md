@@ -75,8 +75,16 @@ cubre ese hueco y lo llama el contenedor `cron`:
 Solo habla cuando hay algo que contar. El silencio significa que todo va bien; un
 aviso que llega cada hora sin motivo se acaba ignorando.
 
-Necesita `SLACK_WEBHOOK_URL`. Sin esa variable no falla: escribe el aviso en el
-log del contenedor, que es donde mira quien diagnostica.
+Para avisar necesita uno de los dos caminos, en el servicio `cron`:
+
+- `SLACK_WEBHOOK_URL`, un webhook entrante, o
+- `SLACK_BOT_TOKEN` mas `SLACK_CHANNEL_ID`, reutilizando el bot que el equipo ya
+  tiene. Canal de avisos de D-IA: `#avisos`, id `C0B9BBBCU49`. Con este camino
+  hay que **invitar al bot al canal**, o Slack contesta `not_in_channel` (y la
+  API devuelve 200 igualmente: el error viaja dentro del cuerpo).
+
+Sin ninguno de los dos no falla: escribe el aviso en el log del contenedor, que
+es donde mira quien diagnostica.
 
 ## Trampas de easypanel que costaron tiempo (2026-09-08)
 

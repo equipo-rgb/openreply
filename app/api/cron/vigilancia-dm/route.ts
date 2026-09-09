@@ -64,37 +64,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, avisado: false, fallos: 0 });
   }
 
-  const webhook = process.env.SLACK_WEBHOOK_URL;
-  if (!webhook) {
-    // Sin webhook el aviso no se pierde: sale por el log del contenedor, que es
-    // donde mira quien diagnostica.
-    console.warn(`[vigilancia] SLACK_WEBHOOK_URL no configurado. Aviso sin enviar:\n${aviso}`);
-    return NextResponse.json({
-      success: true,
-      avisado: false,
-      motivo: "SLACK_WEBHOOK_URL no configurado",
-      fallos: fallos.length,
-    });
-  }
-
-  try {
-    const res = await fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: aviso }),
-    });
-    if (!res.ok) {
-      console.error(`[vigilancia] Slack respondio ${res.status}. Aviso:\n${aviso}`);
-      return NextResponse.json(
-        { success: false, error: `Slack respondio ${res.status}`, fallos: fallos.length },
-        { status: 502 },
-      );
-    }
-  } catch (error) {
-    console.error(`[vigilancia] no se pudo avisar a Slack: ${String(error)}\nAviso:\n${aviso}`);
+  const envio = await avisarASlack(aviso);
+  if (!envio.enviado) {
+    // El aviso no se pierde: sale por el log del contenedor, que es donde mira
+    // quien diagnostica.
+    console.warn(`[vigilancia] ${envio.motivo}. Aviso sin enviar:\n${aviso}`);
     return NextResponse.json(
-      { success: false, error: "No se pudo contactar con Slack", fallos: fallos.length },
-      { status: 502 },
+      { success: envio.configurado ? false : true, avisado: false, motivo: envio.motivo, fallos: fallos.length },
+      { status: envio.configurado ? 502 : 200 },
     );
   }
 
@@ -104,4 +81,64 @@ export async function GET(request: NextRequest) {
     fallos: fallos.length,
     tokensPorCaducar: tokensPorCaducar.length,
   });
+}
+
+/**
+ * Manda el aviso por el camino que este configurado.
+ *
+ * Dos caminos a proposito: `SLACK_WEBHOOK_URL` si hay webhook, o el bot que el
+ * equipo ya tiene (`SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID`), para no montar una
+ * pieza nueva solo para esto. Si no hay ninguno, no es un error: el aviso sale
+ * por el log.
+ */
+async function avisarASlack(
+  texto: string,
+): Promise<{ enviado: true } | { enviado: false; configurado: boolean; motivo: string }> {
+  const webhook = process.env.SLACK_WEBHOOK_URL;
+  const token = process.env.SLACK_BOT_TOKEN;
+  const canal = process.env.SLACK_CHANNEL_ID;
+
+  if (!webhook && !(token && canal)) {
+    return {
+      enviado: false,
+      configurado: false,
+      motivo: "Sin SLACK_WEBHOOK_URL ni SLACK_BOT_TOKEN con SLACK_CHANNEL_ID",
+    };
+  }
+
+  try {
+    if (webhook) {
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: texto }),
+      });
+      if (!res.ok) {
+        return { enviado: false, configurado: true, motivo: `El webhook de Slack respondio ${res.status}` };
+      }
+      return { enviado: true };
+    }
+
+    const res = await fetch("https://slack.com/api/chat.postMessage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ channel: canal, text: texto }),
+    });
+    // La API de Slack contesta 200 aunque falle: el error va dentro del cuerpo.
+    // `not_in_channel` es el habitual: hay que invitar al bot al canal.
+    const cuerpo = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!cuerpo.ok) {
+      return { enviado: false, configurado: true, motivo: `Slack rechazo el mensaje: ${cuerpo.error ?? `HTTP ${res.status}`}` };
+    }
+    return { enviado: true };
+  } catch (error) {
+    return {
+      enviado: false,
+      configurado: true,
+      motivo: `No se pudo contactar con Slack: ${error instanceof Error ? error.message : "error de red"}`,
+    };
+  }
 }
