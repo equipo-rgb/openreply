@@ -72,6 +72,15 @@ cubre ese hueco y lo llama el contenedor `cron`:
   dias. Un token caducado es el fallo mas silencioso que hay: los DMs paran y
   nada da error.
 
+**Detecta el silencio, que es el fallo que no hace ruido.** Si Meta deja de
+entregar comentarios no falla ningun DM, no hay errores y todo se ve verde. Paso el
+2026-09-09: 17 horas sin un solo evento, descubierto porque Martin tuvo que
+responder comentarios a mano. Ahora avisa cuando lleva 4 horas sin recibir nada
+**y** antes si recibia **y** es horario en el que se comenta (07:00 a 21:00 UTC, o
+sea de nueve de la manana a once de la noche en España). Las tres condiciones
+importan: sin la primera avisaria de un sistema recien montado, sin la tercera
+avisaria de madrugada, y un aviso de madrugada entrena a ignorar los avisos.
+
 **Ignora lo que no es problema nuestro.** Un DM que falla porque la persona tiene
 los mensajes cerrados, porque la ventana de 24 horas ya cerro o porque la cuenta
 ya no existe no genera aviso: no hay nada que arreglar. Esos casos se resumen en

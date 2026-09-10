@@ -118,3 +118,42 @@ export function firmaDelAviso(datos: {
   const tokens = [...new Set(datos.tokensPorCaducar.map((t) => t.cuenta))].sort();
   return JSON.stringify({ motivos, tokens });
 }
+
+/**
+ * Silencio anormal en la entrada.
+ *
+ * El fallo mas grave de este sistema no hace ruido: si Meta deja de entregar
+ * comentarios, no falla ningun DM, no hay errores y todo se ve verde. Paso el
+ * 2026-09-09, con 17 horas sin un solo evento y nadie enterado hasta que Martin
+ * respondio comentarios a mano.
+ *
+ * Tres condiciones, y las tres importan:
+ *
+ * - **Hubo trafico antes.** Un sistema recien montado, o una cuenta sin
+ *   comentarios, no esta roto: no tiene nada que recibir.
+ * - **Es horario en el que se comenta.** De madrugada el silencio es normal, y
+ *   avisar a las cuatro de la manana solo entrena a ignorar los avisos.
+ * - **El hueco es largo.** Los comentarios van a rachas; dos horas sin nada un
+ *   martes por la manana no significa nada.
+ */
+const HORAS_DE_SILENCIO_SOSPECHOSO = 4;
+// Horario en UTC. España va dos horas por delante en verano, asi que esto es de
+// las nueve de la manana a las once de la noche, hora local.
+const HORA_UTC_INICIO_ACTIVIDAD = 7;
+const HORA_UTC_FIN_ACTIVIDAD = 21;
+
+export function hayQueAvisarPorSilencio(datos: {
+  horasSinEventos: number;
+  eventosSemanaPrevia: number;
+  horaUtc: number;
+}): boolean {
+  if (datos.eventosSemanaPrevia === 0) return false;
+  if (datos.horaUtc < HORA_UTC_INICIO_ACTIVIDAD || datos.horaUtc >= HORA_UTC_FIN_ACTIVIDAD) {
+    return false;
+  }
+  return datos.horasSinEventos >= HORAS_DE_SILENCIO_SOSPECHOSO;
+}
+
+export function lineaDeSilencio(horasSinEventos: number): string {
+  return `🔇 Instagram lleva ${Math.floor(horasSinEventos)} horas sin entregar ni un comentario, y antes sí llegaban. Puede ser que Meta haya desactivado la suscripción del webhook: revísala en el panel de la app.`;
+}

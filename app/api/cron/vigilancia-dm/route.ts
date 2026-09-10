@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db/client";
 import {
   construirAviso,
   firmaDelAviso,
+  hayQueAvisarPorSilencio,
+  lineaDeSilencio,
   type FalloDM,
   type TokenPorCaducar,
 } from "@/lib/vigilancia/aviso";
@@ -69,14 +71,39 @@ export async function GET(request: NextRequest) {
       }));
   }
 
-  const aviso = construirAviso({ fallos, tokensPorCaducar });
+  // Silencio en la entrada: el fallo que no hace ruido. Si Meta deja de
+  // entregar comentarios no falla ningun DM y todo se ve verde.
+  const ahora = new Date();
+  const [ultimoEvento, eventosSemanaPrevia] = await Promise.all([
+    prisma.webhookEvent.findFirst({ orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
+    prisma.webhookEvent.count({
+      where: { createdAt: { gt: new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000) } },
+    }),
+  ]);
+
+  const horasSinEventos = ultimoEvento
+    ? (ahora.getTime() - ultimoEvento.createdAt.getTime()) / (60 * 60 * 1000)
+    : 0;
+
+  const silencio =
+    ultimoEvento !== null &&
+    hayQueAvisarPorSilencio({
+      horasSinEventos,
+      eventosSemanaPrevia,
+      horaUtc: ahora.getUTCHours(),
+    });
+
+  const avisoFallos = construirAviso({ fallos, tokensPorCaducar });
+  const aviso = [silencio ? lineaDeSilencio(horasSinEventos) : null, avisoFallos]
+    .filter(Boolean)
+    .join("\n\n") || null;
   if (!aviso) {
     return NextResponse.json({ success: true, avisado: false, fallos: 0 });
   }
 
   // Si es exactamente el mismo problema que ya avisamos hace menos de una hora,
   // se calla. Un problema NUEVO cambia la firma y suena enseguida.
-  const firma = firmaDelAviso({ fallos, tokensPorCaducar });
+  const firma = `${silencio ? "silencio" : ""}|${firmaDelAviso({ fallos, tokensPorCaducar })}`;
   try {
     const redis = getRedisConnection();
     const anterior = await redis.get(CLAVE_ULTIMO_AVISO);

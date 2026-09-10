@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { construirAviso, firmaDelAviso } from "@/lib/vigilancia/aviso";
+import {
+  construirAviso,
+  firmaDelAviso,
+  hayQueAvisarPorSilencio,
+} from "@/lib/vigilancia/aviso";
 
 describe("construirAviso", () => {
   it("no avisa cuando no hay nada que contar", () => {
@@ -102,5 +106,31 @@ describe("ruido del destinatario", () => {
       tokensPorCaducar: [],
     });
     expect(aviso).toContain("Algo raro");
+  });
+});
+
+describe("silencio anormal en la entrada", () => {
+  it("no avisa si nunca ha habido actividad: un sistema recién montado no está roto", () => {
+    expect(
+      hayQueAvisarPorSilencio({ horasSinEventos: 30, eventosSemanaPrevia: 0, horaUtc: 12 }),
+    ).toBe(false);
+  });
+
+  it("no avisa de madrugada: nadie comenta a las cuatro de la mañana", () => {
+    expect(
+      hayQueAvisarPorSilencio({ horasSinEventos: 8, eventosSemanaPrevia: 500, horaUtc: 3 }),
+    ).toBe(false);
+  });
+
+  it("avisa si había tráfico y lleva horas muerto en horario normal", () => {
+    expect(
+      hayQueAvisarPorSilencio({ horasSinEventos: 6, eventosSemanaPrevia: 500, horaUtc: 11 }),
+    ).toBe(true);
+  });
+
+  it("no avisa por un hueco corto: los comentarios van a rachas", () => {
+    expect(
+      hayQueAvisarPorSilencio({ horasSinEventos: 2, eventosSemanaPrevia: 500, horaUtc: 11 }),
+    ).toBe(false);
   });
 });
