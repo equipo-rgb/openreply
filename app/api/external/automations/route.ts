@@ -77,6 +77,69 @@ export async function GET(request: NextRequest) {
   }
 
   const params = request.nextUrl.searchParams;
+
+  // ?diagnostico=1 responde a la pregunta que separa dos averias muy distintas:
+  // si Meta esta entregando comentarios y no los procesamos, o si directamente
+  // no llegan. Sin esto solo se puede adivinar.
+  if (params.get("diagnostico") === "1") {
+    const ahora = Date.now();
+    const haceUnaHora = new Date(ahora - 60 * 60 * 1000);
+    const haceUnDia = new Date(ahora - 24 * 60 * 60 * 1000);
+
+    const [ultimoEvento, eventosHora, eventosDia, porEstadoEvento, ultimoDm, dmsDia, cuentas] =
+      await Promise.all([
+        prisma.webhookEvent.findFirst({
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true, status: true },
+        }),
+        prisma.webhookEvent.count({ where: { createdAt: { gt: haceUnaHora } } }),
+        prisma.webhookEvent.count({ where: { createdAt: { gt: haceUnDia } } }),
+        prisma.webhookEvent.groupBy({
+          by: ["status"],
+          where: { createdAt: { gt: haceUnDia } },
+          _count: { _all: true },
+        }),
+        prisma.dmLog.findFirst({
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true, status: true, errorMessage: true },
+        }),
+        prisma.dmLog.groupBy({
+          by: ["status"],
+          where: { createdAt: { gt: haceUnDia } },
+          _count: { _all: true },
+        }),
+        prisma.instagramAccount.findMany({
+          select: { username: true, webhookSubscribed: true, tokenExpiresAt: true },
+        }),
+      ]);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        webhooks: {
+          ultimo: ultimoEvento?.createdAt.toISOString() ?? null,
+          estadoUltimo: ultimoEvento?.status ?? null,
+          ultimaHora: eventosHora,
+          ultimoDia: eventosDia,
+          porEstadoUltimoDia: Object.fromEntries(
+            porEstadoEvento.map((e) => [e.status, e._count._all]),
+          ),
+        },
+        dms: {
+          ultimo: ultimoDm?.createdAt.toISOString() ?? null,
+          estadoUltimo: ultimoDm?.status ?? null,
+          errorUltimo: ultimoDm?.errorMessage ?? null,
+          porEstadoUltimoDia: Object.fromEntries(dmsDia.map((d) => [d.status, d._count._all])),
+        },
+        cuentas: cuentas.map((c) => ({
+          cuenta: c.username,
+          webhookSuscrito: c.webhookSubscribed,
+          tokenCaduca: c.tokenExpiresAt?.toISOString() ?? null,
+        })),
+      },
+    });
+  }
+
   const account = params.get("account");
   const rawDays = Number(params.get("days") ?? 14);
   const days = Number.isFinite(rawDays) ? Math.min(Math.max(Math.trunc(rawDays), 1), 90) : 14;
